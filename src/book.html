@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Claude Code Chips</title>
+<meta name="description" content="An unofficial pop-up field guide to Claude Code agents, chips and the token bill.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bar:#f4f1ebe6;--bar-ink:#2b2620;--bar-muted:#8a8275;--card:#fbf9f4f2;--rule:#00000014;--clay:#d97757;--page-bg:#cfc6b6;color-scheme:light}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bar:#2a2622e6;--bar-ink:#f1ebe0;--bar-muted:#a59d8f;--card:#2d2925f2;--rule:#ffffff1a;--page-bg:#1d1a17;color-scheme:dark}}
+  :root[data-theme="dark"]{--bar:#2a2622e6;--bar-ink:#f1ebe0;--bar-muted:#a59d8f;--card:#2d2925f2;--rule:#ffffff1a;--page-bg:#1d1a17;color-scheme:dark}
+  *{box-sizing:border-box} html,body{margin:0;height:100%;overflow:hidden;background:var(--page-bg);font-family:Newsreader,Georgia,serif;color:var(--bar-ink)}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  .bar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;padding:6px 8px;border-radius:999px;background:var(--bar);
+    backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px);box-shadow:0 6px 30px #0000002a,0 0 0 1px var(--rule);z-index:5;max-width:calc(100vw - 24px)}
+  .bar button{all:unset;cursor:pointer;width:34px;height:34px;display:grid;place-items:center;border-radius:50%;color:var(--bar-ink)}
+  .bar button:hover{background:var(--rule)} .bar button:focus-visible{outline:2px solid var(--clay)}
+  .bar button[aria-pressed=true]{color:var(--clay)}
+  .bar svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .cap{display:flex;align-items:center;gap:8px;min-width:230px;max-width:330px;padding:0 10px;font-size:14px;line-height:1.2}
+  .cap .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dots{display:flex;gap:4px} .dots i{width:5px;height:5px;border-radius:50%;background:var(--bar-muted);opacity:.45} .dots i.on{opacity:1;background:var(--bar-ink);width:14px;border-radius:3px}
+  .sep{width:1px;height:20px;background:var(--rule);margin:0 4px}
+  .menu{position:fixed;left:50%;bottom:72px;transform:translateX(-50%) translateY(8px);background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:16px;
+    box-shadow:0 10px 40px #0000002e,0 0 0 1px var(--rule);padding:10px;min-width:300px;opacity:0;pointer-events:none;transition:.2s;z-index:6}
+  .menu.open{opacity:1;pointer-events:auto;transform:translateX(-50%)}
+  .menu button{all:unset;cursor:pointer;display:flex;gap:12px;align-items:baseline;width:100%;padding:9px 12px;border-radius:10px;font-size:16px}
+  .menu button:hover{background:var(--rule)} .menu button.cur{background:var(--bar-ink);color:var(--card)}
+  .menu small{font:600 10.5px/1 "JetBrains Mono",monospace;letter-spacing:.12em;color:var(--clay);min-width:62px}
+  .menu .foot{font-size:12px;color:var(--bar-muted);padding:8px 12px 4px;line-height:1.45}
+  #lens{position:fixed;width:168px;height:168px;border-radius:50%;pointer-events:none;z-index:4;opacity:0;transition:opacity .15s;background-color:#fff;background-repeat:no-repeat;
+    box-shadow:0 8px 26px #00000040,inset 0 0 0 2px #ffffffcc,inset 0 0 18px #00000022;transform:translate(-50%,-50%)}
+  #lens.on{opacity:1}
+  #lens::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffffff55,transparent 45%)}
+  .card{position:fixed;z-index:5;max-width:330px;background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:12px;padding:12px 15px 13px;
+    box-shadow:0 10px 34px #00000030,0 0 0 1px var(--rule);opacity:0;transform:translateY(4px);transition:.18s;pointer-events:none;font-size:15px;line-height:1.38}
+  .card.on{opacity:1;transform:none}
+  .card .k{font:700 10px/1 "JetBrains Mono",monospace;letter-spacing:.14em;color:var(--clay);text-transform:uppercase;margin-bottom:6px}
+  .card .h{font-weight:700;font-size:18px;margin-bottom:4px} .card p{margin:0 0 5px} .card code{font:12.5px "JetBrains Mono",monospace;background:var(--rule);padding:1px 4px;border-radius:4px}
+  .intro{position:fixed;left:50%;top:22px;transform:translateX(-50%);z-index:5;text-align:center;pointer-events:none;transition:opacity .5s}
+  .intro h1{margin:0;font-size:15px;font-weight:600;letter-spacing:.02em} .intro p{margin:3px 0 0;font-size:13px;color:var(--bar-muted)}
+  .intro.gone{opacity:0}
+  .hint{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:4;font:600 11px/1 "JetBrains Mono",monospace;letter-spacing:.1em;text-transform:uppercase;
+    background:var(--card);padding:8px 12px;border-radius:999px;box-shadow:0 4px 18px #00000022;transition:opacity .4s;pointer-events:none}
+  .hint.gone{opacity:0}
+  .load{position:fixed;inset:0;display:grid;place-items:center;z-index:9;background:var(--page-bg);font:600 12px "JetBrains Mono",monospace;letter-spacing:.14em;transition:opacity .6s}
+  .load.gone{opacity:0;pointer-events:none}
+  @media (max-width:640px){.cap{min-width:0;max-width:44vw}.dots{display:none}.bar{bottom:12px;padding:4px}.bar button{width:30px;height:30px}.sep{display:none}
+    .bar .opt{display:none}.menu{min-width:calc(100vw - 32px)} #lens{width:130px;height:130px}.hint{bottom:62px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="c" aria-label="A 3D pop-up book about Claude Code agents and costs"></canvas>
+<div class="load" id="load">OPENING THE BOOK…</div>
+<div class="intro" id="intro"><h1>Claude Code Chips</h1><p>An unofficial pop-up field guide to agents, chips and the token bill</p></div>
+<div class="hint" id="hint">Tap the cover to open</div>
+<div id="lens"></div>
+<div class="card" id="card"></div>
+<div class="menu" id="menu"></div>
+<div class="bar" id="bar">
+  <button id="bMenu" title="Contents" aria-label="Contents"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+  <button id="bPrev" title="Previous page" aria-label="Previous page"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <button id="bPlay" title="Play the tour" aria-label="Play the tour"><svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5l11 7-11 7z" fill="currentColor" stroke="none"/></svg></button>
+  <div class="cap"><span class="t" id="capT">Claude Code Chips</span><span class="dots" id="dots"></span></div>
+  <button id="bNext" title="Next page" aria-label="Next page"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+  <span class="sep"></span>
+  <button id="bSound" class="opt" title="Sound" aria-label="Sound" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 9a4 4 0 010 6" id="sndWave"/></svg></button>
+  <button id="bTheme" class="opt" title="Day / night" aria-label="Day or night"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 000 16z" fill="currentColor"/></svg></button>
+  <button id="bView" class="opt" title="Reset the view" aria-label="Reset the view"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+/* ============================================================
+   Claude Code Chips: a pop-up book on a desk.
+   Left page = the lesson (canvas text, predict, lift-the-flap). Right page = a pencil-hatched pop-up scene you tap.
+   ============================================================ */
+const MASCOT = '__MASCOT__';
+const INK = '#2b2620', CLAY = '#d97757', PAPERC = '#fbfaf5';
+const COL = { input:'#e0794f', output:'#8b5cf6', write:'#3b82f6', read:'#22c55e', gold:'#e9b949' };
+const PW = 1.0, PH = 1.36, BASE_Y = 0.0755, SERIF = 'Newsreader, Georgia, "Times New Roman", serif', MONO = '"JetBrains Mono", ui-monospace, Menlo, monospace';
+const qs = new URLSearchParams(location.search);
+
+/* ---------- renderer / scene ---------- */
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, preserveDrawingBuffer:qs.has('shot') });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, .05, 60);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = .08; controls.minDistance = .6; controls.maxDistance = 7.5; controls.maxPolarAngle = 1.32; controls.enablePan = true;
+controls.screenSpacePanning = true;
+
+const hemi = new THREE.HemisphereLight(0xfff8ee, 0x8a9a92, .9); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff1dc, 2.1); sun.position.set(-2.6, 4.2, 2.2); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left:-2.6, right:2.6, top:2.6, bottom:-2.6, near:.5, far:12 }); sun.shadow.bias = -.0004; sun.shadow.normalBias = .02;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xdfe8ff, .35); fill.position.set(3, 2, -2); scene.add(fill);
+
+/* ---------- materials: pencil hatch ---------- */
+const PR = renderer.getPixelRatio();
+function hatchMat(color = PAPERC, opts = {}){
+  const m = new THREE.MeshLambertMaterial({ color, transparent:!!opts.opacity, opacity:opts.opacity ?? 1, side:opts.side ?? THREE.FrontSide });
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uInk = { value:new THREE.Color(INK) }; sh.uniforms.uPR = { value:PR }; sh.uniforms.uK = { value:opts.k ?? .86 };
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+      uniform vec3 uInk; uniform float uPR; uniform float uK;
+      float hl(vec2 p, float a, float s, float w){ float v = p.x*cos(a) + p.y*sin(a); float d = abs(fract(v/s) - .5)*s; return 1. - smoothstep(w*.5, w*.5 + 1.1, d); }`)
+    .replace('#include <opaque_fragment>', `
+      float lum = clamp(dot(outgoingLight, vec3(.299,.587,.114)) / max(.001, dot(diffuseColor.rgb, vec3(.299,.587,.114))), 0., 1.6);
+      vec2 sp = gl_FragCoord.xy / uPR;
+      float h = 0.;
+      if (lum < .92*uK) h = max(h, hl(sp, .785, 6.5, .55) * smoothstep(.92*uK, .70*uK, lum) * .55);
+      if (lum < .66*uK) h = max(h, hl(sp, -.785, 6.5, .6) * smoothstep(.66*uK, .46*uK, lum) * .6);
+      if (lum < .40*uK) h = max(h, hl(sp, 0., 4.2, .7) * .65);
+      outgoingLight = mix(diffuseColor.rgb * (.86 + .14*min(lum, 1.)), uInk, h);
+      #include <opaque_fragment>`);
+  };
+  return m;
+}
+const PAPER = hatchMat(), PAPER2 = hatchMat('#f1ede4'), LINEMAT = new THREE.LineBasicMaterial({ color:INK, transparent:true, opacity:.82 });
+const GLASS = new THREE.MeshPhysicalMaterial({ color:0xffffff, transparent:true, opacity:.16, roughness:.08, transmission:0, depthWrite:false });
+function inked(mesh, angle = 28){ const e = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry, angle), LINEMAT); e.raycast = () => {}; mesh.add(e); return mesh; }
+function shadowy(o, cast = true, recv = true){ o.traverse(c => { if (c.isMesh){ c.castShadow = cast; c.receiveShadow = recv; } }); return o; }
+const M = (geo, mat = PAPER, ink = true, angle) => { const m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true; if (ink) inked(m, angle); return m; };
+const box  = (w,h,d,mat,r=0) => M(r ? new RoundedBoxGeometry(w,h,d,2,r) : new THREE.BoxGeometry(w,h,d), mat);
+const cylg = (rt,rb,h,seg=28) => new THREE.CylinderGeometry(rt,rb,h,seg);
+const at = (o, x, y, z) => (o.position.set(x, y, z), o);
+const inkTube = (pts, r = .0035, mat) => { const c = new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(...p))); const m = new THREE.Mesh(new THREE.TubeGeometry(c, Math.max(8, pts.length*6), r, 6, false), mat || new THREE.MeshBasicMaterial({ color:INK })); m.castShadow = true; return m; };
+const ring = (r, tube = .0035, mat) => { const m = new THREE.Mesh(new THREE.TorusGeometry(r, tube, 6, 48), mat || new THREE.MeshBasicMaterial({ color:INK })); m.rotation.x = Math.PI/2; return m; };
+
+/* ---------- canvas helpers ---------- */
+function canvasTex(w, h, draw){ const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d'); draw(g, w, h);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); t.userData = { cv, g, draw };
+  t.redraw = fn => { g.clearRect(0,0,w,h); g.textAlign = 'left'; g.textBaseline = 'alphabetic'; (fn || t.userData.draw)(g, w, h); t.needsUpdate = true; }; return t; }
+function wrap(g, text, maxW){ const out = []; for (const para of String(text).split('\n')){ let line = ''; for (const w of para.split(' ')){ const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line){ out.push(line); line = w; } else line = t; } out.push(line); } return out; }
+function paperBg(g, w, h, tint = '#fbfaf5'){ g.fillStyle = tint; g.fillRect(0,0,w,h);
+  for (let i = 0; i < 1400; i++){ g.fillStyle = `rgba(90,80,60,${Math.random()*.035})`; g.fillRect(Math.random()*w, Math.random()*h, 1 + Math.random()*2, 1 + Math.random()*2); } }
+// mini rich text: **bold**, `code`
+function richLine(g, line, x, y, size, color = INK){
+  const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`)/); let cx = x;
+  for (const p of parts){ if (!p) continue;
+    if (p.startsWith('**')){ g.font = `700 ${size}px ${SERIF}`; g.fillStyle = color; g.fillText(p.slice(2,-2), cx, y); cx += g.measureText(p.slice(2,-2)).width; }
+    else if (p.startsWith('`')){ g.font = `500 ${size*.82}px ${MONO}`; const tw = g.measureText(p.slice(1,-1)).width; g.fillStyle = '#ede6d8'; g.fillRect(cx-2, y - size*.78, tw + 8, size*1.02); g.fillStyle = '#7a3b22'; g.fillText(p.slice(1,-1), cx + 2, y - size*.06); cx += tw + 10; }
+    else { g.font = `400 ${size}px ${SERIF}`; g.fillStyle = color; g.fillText(p, cx, y); cx += g.measureText(p).width; } }
+}
+function richWrap(g, text, maxW, size){ // wrap counting styled widths approximately
+  g.font = `400 ${size}px ${SERIF}`; return wrap(g, text, maxW); }
+
+/* ---------- desk + mat ---------- */
+const deskTex = canvasTex(1024, 1024, (g, w, h) => { g.fillStyle = '#e6dccb'; g.fillRect(0,0,w,h);
+  for (let i = 0; i < 8; i++){ const y0 = i*h/8; g.fillStyle = i % 2 ? '#e2d6c2' : '#e9dfcf'; g.fillRect(0, y0, w, h/8); g.strokeStyle = '#cdbfa8'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, y0); g.lineTo(w, y0); g.stroke();
+    for (let k = 0; k < 26; k++){ g.strokeStyle = `rgba(150,120,80,${.05 + Math.random()*.07})`; g.lineWidth = 1 + Math.random()*1.5; g.beginPath(); const yy = y0 + Math.random()*h/8; g.moveTo(0, yy);
+      for (let x = 0; x <= w; x += 64) g.lineTo(x, yy + Math.sin(x/90 + k)*3 + Math.random()*1.5); g.stroke(); } } });
+deskTex.wrapS = deskTex.wrapT = THREE.RepeatWrapping; deskTex.repeat.set(3, 3);
+const desk = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.MeshLambertMaterial({ map:deskTex })); desk.rotation.x = -Math.PI/2; desk.position.y = -.012; desk.receiveShadow = true; scene.add(desk);
+const matTex = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#9fb3a8'; g.fillRect(0,0,w,h); for (let i = 0; i < 3000; i++){ g.fillStyle = `rgba(255,255,255,${Math.random()*.05})`; g.fillRect(Math.random()*w, Math.random()*h, 2, 2); } });
+const mat = new THREE.Mesh(new RoundedBoxGeometry(4.6, .01, 3.2, 3, .005), new THREE.MeshLambertMaterial({ map:matTex })); mat.position.set(0, -.006, .05); mat.receiveShadow = true; scene.add(mat);
+
+/* ---------- the book ---------- */
+const book = new THREE.Group(); scene.add(book);
+const COVER = new THREE.MeshLambertMaterial({ color:CLAY });
+const MASCOT_IMG = new Image();
+const coverTex = canvasTex(1100, 1500, drawCover);
+function drawCover(g, w, h){
+  g.fillStyle = CLAY; g.fillRect(0,0,w,h);
+  for (let i = 0; i < 9000; i++){ g.fillStyle = `rgba(${Math.random() < .5 ? '255,240,220' : '80,30,10'},${Math.random()*.05})`; g.fillRect(Math.random()*w, Math.random()*h, 2, 2); }
+  g.strokeStyle = '#f6e7d8'; g.lineWidth = 3; g.strokeRect(60, 60, w-120, h-120);
+  g.fillStyle = '#fbf2e6'; g.font = `600 30px ${MONO}`; g.textAlign = 'left'; g.fillText('AN UNOFFICIAL POP-UP FIELD GUIDE', 110, 160);
+  g.font = `700 150px ${SERIF}`; g.fillText('Claude', 104, 330); g.fillText('Code', 104, 470); g.font = `italic 600 150px ${SERIF}`; g.fillText('Chips', 104, 610);
+  g.font = `400 40px ${SERIF}`; g.fillStyle = '#fff3e4'; wrap(g, 'Agents, the chips they run on, and how to keep the token bill small.', 820).forEach((l, i) => g.fillText(l, 110, 700 + i*52));
+  // a little board of chips
+  const ox = 140, oy = 900, cs = 120;
+  const chipC = ['#2b2620', '#3b82f6', '#8b5cf6', '#22c55e', '#e9b949', '#fbf2e6'];
+  for (let i = 0; i < 6; i++){ const x = ox + (i % 3)*(cs + 70), y = oy + Math.floor(i/3)*(cs + 70);
+    g.fillStyle = chipC[i]; g.fillRect(x, y, cs, cs); g.strokeStyle = '#2b2620'; g.lineWidth = 4; g.strokeRect(x, y, cs, cs);
+    g.fillStyle = '#2b2620'; for (let k = 0; k < 4; k++){ g.fillRect(x + 18 + k*26, y - 16, 8, 16); g.fillRect(x + 18 + k*26, y + cs, 8, 16); g.fillRect(x - 16, y + 18 + k*26, 16, 8); g.fillRect(x + cs, y + 18 + k*26, 16, 8); } }
+  if (MASCOT_IMG.complete && MASCOT_IMG.naturalWidth){ const mw = 260, mh = mw*MASCOT_IMG.naturalHeight/MASCOT_IMG.naturalWidth, mx = w - mw - 130, my = h - mh - 190;
+    g.fillStyle = '#fbf2e6'; g.beginPath(); g.roundRect(mx - 40, my - 40, mw + 80, mh + 80, 30); g.fill(); g.strokeStyle = '#2b2620'; g.lineWidth = 4; g.stroke(); g.drawImage(MASCOT_IMG, mx, my, mw, mh); }
+  g.fillStyle = '#fbf2e6'; g.font = `600 26px ${MONO}`; g.fillText('VOL. 1  ·  TOKENS, CHIPS, COSTS', 110, h - 110);
+}
+MASCOT_IMG.onload = () => coverTex.redraw(); MASCOT_IMG.src = MASCOT;
+
+// right half (fixed): back cover, page block, right page
+const backCover = M(new RoundedBoxGeometry(PW + .045, .024, PH + .07, 2, .006), COVER, false); at(backCover, PW/2 + .01, .012, 0); book.add(backCover);
+const blockR = M(new THREE.BoxGeometry(PW - .01, .05, PH - .012), PAPER2, true); at(blockR, PW/2 + .002, .024 + .025, 0); book.add(blockR);
+for (let i = 1; i < 6; i++){ const l = new THREE.Mesh(new THREE.BoxGeometry(.0008, .049, PH - .016), new THREE.MeshBasicMaterial({ color:'#d8d1c3' })); }
+const rightTex = canvasTex(1400, 1904, (g, w, h) => paperBg(g, w, h));
+const rightPage = new THREE.Mesh(new THREE.PlaneGeometry(PW, PH), new THREE.MeshLambertMaterial({ map:rightTex })); rightPage.rotation.x = -Math.PI/2; at(rightPage, PW/2, BASE_Y, 0); rightPage.receiveShadow = true; book.add(rightPage);
+// spine crease shadow
+const crease = new THREE.Mesh(new THREE.PlaneGeometry(.08, PH), new THREE.MeshBasicMaterial({ transparent:true, opacity:.22, map:canvasTex(64, 8, (g, w) => { const gr = g.createLinearGradient(0,0,w,0); gr.addColorStop(0,'rgba(60,40,20,0)'); gr.addColorStop(.5,'rgba(60,40,20,1)'); gr.addColorStop(1,'rgba(60,40,20,0)'); g.fillStyle = gr; g.fillRect(0,0,w,8); }), depthWrite:false }));
+crease.rotation.x = -Math.PI/2; at(crease, 0, BASE_Y + .0012, 0); book.add(crease);
+// left half: pivots on the spine at the page surface; rotation.z = -theta closes it over the right half
+const leftHalf = new THREE.Group(); at(leftHalf, 0, BASE_Y, 0); book.add(leftHalf);
+const frontCover = new THREE.Mesh(new RoundedBoxGeometry(PW + .045, .024, PH + .07, 2, .006), [COVER, COVER, COVER, new THREE.MeshLambertMaterial({ map:coverTex }), COVER, COVER]);
+frontCover.castShadow = frontCover.receiveShadow = true; at(frontCover, -PW/2 - .01, -BASE_Y + .012, 0); leftHalf.add(frontCover);
+coverTex.center.set(.5, .5); coverTex.rotation = Math.PI;
+const blockL = M(new THREE.BoxGeometry(PW - .01, .05, PH - .012), PAPER2, true); at(blockL, -PW/2 - .002, -BASE_Y + .049, 0); leftHalf.add(blockL);
+const leftTex = canvasTex(1400, 1904, (g, w, h) => paperBg(g, w, h));
+const leftPage = new THREE.Mesh(new THREE.PlaneGeometry(PW, PH), new THREE.MeshLambertMaterial({ map:leftTex })); leftPage.rotation.x = -Math.PI/2; at(leftPage, -PW/2, .0005, 0); leftPage.receiveShadow = true; leftHalf.add(leftPage);
+const spine = M(new THREE.CylinderGeometry(.04, .04, PH + .07, 20, 1, false, Math.PI/2, Math.PI), COVER, false); spine.rotation.x = Math.PI/2; at(spine, 0, .036, 0); spine.scale.set(1, 1, .9); book.add(spine);
+// bookmark ribbon
+const ribbon = new THREE.Mesh(new THREE.PlaneGeometry(.022, .32), new THREE.MeshLambertMaterial({ color:'#3b4a8a', side:THREE.DoubleSide })); ribbon.rotation.x = -Math.PI/2 + .05; at(ribbon, .03, .02, PH/2 + .15); book.add(ribbon);
+// the turning page (two faces)
+const turn = new THREE.Group(); at(turn, 0, BASE_Y + .0015, 0); turn.visible = false; book.add(turn);
+const turnFront = new THREE.Mesh(new THREE.PlaneGeometry(PW, PH, 24, 1), new THREE.MeshLambertMaterial({ map:null })); turnFront.rotation.x = -Math.PI/2; at(turnFront, PW/2, 0, 0); turn.add(turnFront);
+const turnBack  = new THREE.Mesh(new THREE.PlaneGeometry(PW, PH, 24, 1), new THREE.MeshLambertMaterial({ map:null })); turnBack.rotation.x = Math.PI/2; turnBack.rotation.z = Math.PI; at(turnBack, PW/2, -.0008, 0); turn.add(turnBack);
+const snap = tex => { const cv = document.createElement('canvas'); cv.width = tex.userData.cv.width; cv.height = tex.userData.cv.height; cv.getContext('2d').drawImage(tex.userData.cv, 0, 0); const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t; };
+
+/* ---------- tiny animation system ---------- */
+const anims = [];
+const easeIO = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2, easeOut = t => 1 - Math.pow(1 - t, 3), easeBack = t => { const c = 1.6; return 1 + (c+1)*Math.pow(t-1,3) + c*Math.pow(t-1,2); };
+function anim(dur, step, done, ease = easeIO){ return new Promise(res => anims.push({ t0:performance.now(), dur:dur*1000, step, done:() => { done && done(); res(); }, ease })); }
+const wait = s => new Promise(r => setTimeout(r, s*1000));
+function tickAnims(now){ for (let i = anims.length - 1; i >= 0; i--){ const a = anims[i], k = Math.min(1, (now - a.t0)/a.dur); a.step(a.ease(k), k); if (k >= 1){ anims.splice(i, 1); a.done(); } } }
+
+/* ---------- sound ---------- */
+let AC = null, soundOn = true;
+const ac = () => { if (!AC){ const A = window.AudioContext || window.webkitAudioContext; if (A) AC = new A(); } if (AC && AC.state === 'suspended') AC.resume(); return AC; };
+function sfx(kind){
+  if (!soundOn) return; const c = ac(); if (!c) return; const t = c.currentTime + .01, g = c.createGain(); g.connect(c.destination);
+  const tone = (f, d, v, type = 'sine', f2) => { const o = c.createOscillator(), gg = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    gg.gain.setValueAtTime(0, t); gg.gain.linearRampToValueAtTime(v, t + .01); gg.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(gg); gg.connect(g); o.start(t); o.stop(t + d + .05); };
+  const noise = (d, v, f = 1200, q = .7) => { const b = c.createBuffer(1, c.sampleRate*d, c.sampleRate), x = b.getChannelData(0); for (let i = 0; i < x.length; i++) x[i] = (Math.random()*2 - 1)*(1 - i/x.length);
+    const s = c.createBufferSource(), fl = c.createBiquadFilter(), gg = c.createGain(); s.buffer = b; fl.type = 'bandpass'; fl.frequency.value = f; fl.Q.value = q; gg.gain.value = v; s.connect(fl); fl.connect(gg); gg.connect(g); s.start(t); };
+  if (kind === 'page') noise(.45, .5, 1600, .5);
+  if (kind === 'fill') { tone(420, .35, .12, 'sine', 820); tone(840, .25, .05, 'triangle', 1200); }
+  if (kind === 'tap') tone(1100, .06, .08, 'triangle');
+  if (kind === 'flap') noise(.18, .4, 2400, .8);
+  if (kind === 'coin') { tone(1800, .12, .08, 'square'); tone(2600, .18, .05); }
+  if (kind === 'thud') { tone(120, .22, .25, 'sine', 60); noise(.1, .3, 400); }
+  if (kind === 'good') [0,1,2].forEach(i => tone(660 + i*220, .25, .07, 'triangle'));
+}
+
+/* ---------- jars (the token stores): glass, a glowing liquid, a pour stream and bubbles ---------- */
+function makeJar(r, h, color, label){
+  const g = new THREE.Group();
+  const glass = new THREE.Mesh(cylg(r, r, h, 36), GLASS); glass.position.y = h/2; glass.renderOrder = 2; g.add(glass);
+  g.add(at(ring(r), 0, h, 0), at(ring(r), 0, .003, 0), at(ring(r*.98, .0025), 0, h - .018, 0));
+  for (const a of [.8, 2.35, 3.9, 5.45]) g.add(inkTube([[Math.cos(a)*r, .004, Math.sin(a)*r], [Math.cos(a)*r, h, Math.sin(a)*r]], .0016, new THREE.MeshBasicMaterial({ color:INK, transparent:true, opacity:.35 })));
+  const hl = inkTube([[-r*.55, h*.15, r*.82], [-r*.62, h*.85, r*.78]], r*.06, new THREE.MeshBasicMaterial({ color:'#ffffff', transparent:true, opacity:.5 })); g.add(hl);
+  const liqMat = new THREE.MeshStandardMaterial({ color, emissive:color, emissiveIntensity:.55, transparent:true, opacity:.86, roughness:.3 });
+  const liq = new THREE.Mesh(cylg(r*.9, r*.9, 1, 36), liqMat); liq.scale.y = .0001; liq.position.y = .002; liq.visible = false; g.add(liq);
+  const top = new THREE.Mesh(new THREE.CircleGeometry(r*.9, 36), new THREE.MeshBasicMaterial({ color:new THREE.Color(color).lerp(new THREE.Color('#ffffff'), .4), transparent:true, opacity:.92 })); top.rotation.x = -Math.PI/2; top.visible = false; g.add(top);
+  const stream = new THREE.Mesh(cylg(r*.13, r*.1, 1, 12), new THREE.MeshStandardMaterial({ color, emissive:color, emissiveIntensity:.8, transparent:true, opacity:.85 })); stream.visible = false; g.add(stream);
+  const bubbles = Array.from({ length:8 }, () => { const b = new THREE.Mesh(new THREE.SphereGeometry(r*.08, 8, 6), new THREE.MeshBasicMaterial({ color:'#ffffff', transparent:true, opacity:.65 })); b.visible = false; g.add(b); return b; });
+  const glow = new THREE.PointLight(color, 0, .5, 2); glow.position.y = h*.4; g.add(glow);
+  const place = L => { const hh = Math.max(.0001, L*(h - .012)); liq.visible = L > .002; liq.scale.y = hh; liq.position.y = .003 + hh/2; top.position.y = .004 + hh; top.visible = L > .002; glow.intensity = L > 0 ? .2 + L*.4 : 0; return hh; };
+  g.userData = { h, value:0, level:0,
+    setNow(v, max){ this.value = v; this.level = Math.max(0, Math.min(1, v/max)); place(this.level); },
+    set(v, max){ const lv = Math.max(0, Math.min(1, v/max)), from = this.level, filling = lv > from + .001; this.value = v; this.level = lv;
+      const seeds = bubbles.map(() => [Math.random()*Math.PI*2, Math.random()*r*.6, Math.random()]);
+      return anim(1.1, (k, raw) => { const L = from + (lv - from)*Math.min(1, raw*1.25), hh = place(L);
+        top.scale.setScalar(1 + Math.sin(raw*30)*.04*(1 - raw));
+        if (filling){ const t0 = h + .07, len = Math.max(.001, t0 - hh); stream.visible = raw < .82; stream.scale.y = len*(raw < .1 ? raw*10 : 1); stream.position.y = t0 - stream.scale.y/2;
+          bubbles.forEach((b, i) => { const [a, rr, ph] = seeds[i], q = (raw*1.6 + ph) % 1; b.visible = raw < .95 && hh > .01; b.position.set(Math.cos(a)*rr, .006 + q*hh, Math.sin(a)*rr); b.scale.setScalar(.6 + q*.8); }); }
+        if (raw >= 1){ stream.visible = false; bubbles.forEach(b => b.visible = false); top.scale.setScalar(1); } }, null, t => t); } };
+  return g;
+}
+function labelCard(w, h, draw){ const tex = canvasTex(Math.round(w*1400), Math.round(h*1400), draw); const m = M(new THREE.BoxGeometry(w, .004, h), [PAPER, PAPER, new THREE.MeshLambertMaterial({ map:tex }), PAPER, PAPER, PAPER], false); inked(m); m.userData.tex = tex; return m; }
+const fmtK = n => n >= 1000 ? (n/1000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '') + 'k' : String(Math.round(n));
+function jarLabel(name, color){ const card = labelCard(.18, .09, () => {}); let shownV = 0, tok = 0;
+  const draw = (val, extra) => card.userData.tex.redraw((g, w, h) => { g.fillStyle = '#fbf9f2'; g.fillRect(0,0,w,h);
+    g.fillStyle = color; g.fillRect(0, 0, 16, h); g.fillStyle = INK; g.font = `600 ${h*.2}px ${MONO}`; g.fillText(name.toUpperCase(), 30, h*.3);
+    g.font = `700 ${h*(extra ? .34 : .42)}px ${SERIF}`; g.fillText(fmtK(val), 30, h*(extra ? .66 : .8)); if (extra){ g.font = `400 ${h*.14}px ${MONO}`; g.fillStyle = '#7a7266'; g.fillText(extra, 30, h*.9); } });
+  card.userData.set = (val, extra = '', animate = true) => { const from = shownV, my = ++tok; shownV = val; if (!animate || Math.abs(val - from) < 1) return draw(val, extra);
+    anim(.6, k => { if (my === tok) draw(from + (val - from)*k, extra); }); };
+  card.userData.set(0, '', false); card.rotation.x = 1.05; return card; }
+
+/* ---------- per-frame updaters for the current scene ---------- */
+let sceneUpd = [];
+const onFrame = fn => (sceneUpd.push(fn), fn);
+
+/* ---------- pretty chips ---------- */
+const GOLD = new THREE.MeshStandardMaterial({ color:'#d9a441', metalness:.85, roughness:.28 });
+const CHIPBODY = new THREE.MeshStandardMaterial({ color:'#2c2825', roughness:.42, metalness:.2 });
+function makeChip(label, sub, color, size = .09){
+  const g = new THREE.Group(), s = size, th = s*.22;
+  const body = M(new RoundedBoxGeometry(s, th, s, 2, s*.07), CHIPBODY, true, 40); body.position.y = th/2 + .004; g.add(body);
+  const n = Math.max(3, Math.round(s*45)), pa = new THREE.BoxGeometry(s*.06, .004, s*.14), pb = new THREE.BoxGeometry(s*.14, .004, s*.06);
+  for (let k = 0; k < n; k++){ const off = -s/2 + s*(k + .5)/n; for (const sg of [-1, 1]){ const a = new THREE.Mesh(pa, GOLD), b = new THREE.Mesh(pb, GOLD);
+    a.position.set(off, .004, sg*(s/2 + s*.05)); b.position.set(sg*(s/2 + s*.05), .004, off); a.castShadow = b.castShadow = true; g.add(a, b); } }
+  const tex = canvasTex(320, 320, (c, w, h) => { const gr = c.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#45403b'); gr.addColorStop(1, '#1f1c1a'); c.fillStyle = gr; c.fillRect(0,0,w,h);
+    c.fillStyle = color; c.fillRect(0, 0, w, 28); c.strokeStyle = 'rgba(255,255,255,.13)'; c.lineWidth = 3; c.strokeRect(16, 44, w - 32, h - 60);
+    c.fillStyle = '#f4eee3'; c.textAlign = 'center'; c.font = `700 ${label.length > 7 ? 40 : label.length > 5 ? 48 : 58}px ${MONO}`; c.fillText(label, w/2, h*.58);
+    c.font = `400 25px ${MONO}`; c.fillStyle = '#c2b8a8'; c.fillText(sub, w/2, h*.78); c.fillStyle = 'rgba(255,255,255,.45)'; c.beginPath(); c.arc(38, 66, 8, 0, 7); c.fill(); });
+  const top = new THREE.Mesh(new THREE.PlaneGeometry(s*.94, s*.94), new THREE.MeshStandardMaterial({ map:tex, roughness:.3, metalness:.1 })); top.rotation.x = -Math.PI/2; top.position.y = th + .0046; g.add(top);
+  const led = new THREE.Mesh(new THREE.SphereGeometry(s*.055, 12, 8), new THREE.MeshStandardMaterial({ color:'#55504a', emissive:color, emissiveIntensity:0 })); led.position.set(s*.34, th + .006, -s*.34); g.add(led);
+  const lt = new THREE.PointLight(color, 0, .3, 2); lt.position.set(0, th + .04, 0); g.add(lt);
+  let on = false; g.userData.setActive = v => { if (v === on) return; on = v; anim(.45, k => { const q = v ? k : 1 - k; led.material.emissiveIntensity = 2.4*q; lt.intensity = .6*q; }); };
+  return g;
+}
+
+/* ---------- the agents: the pixel sprites rebuilt as little 3D figures ---------- */
+const AG_S = .0022;
+const SKIN = {}; const skinOf = c => SKIN[c] || (SKIN[c] = hatchMat(c));
+const HATM = { brown:hatchMat('#7d6858'), dark:hatchMat('#3d3935'), white:hatchMat('#fbfaf5'), mustard:hatchMat('#f0b429'), cobalt:hatchMat('#4f78c8'), red:hatchMat('#e2483d'), steel:hatchMat('#cfd3d6') };
+function makeAgent({ hat = null, tool = null, color = '#e8835f', expr = 'open', name = '' } = {}){
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body); body.scale.setScalar(AG_S);
+  const skin = skinOf(color);
+  const B = (x0, y0, z0, x1, y1, z1, m = skin, r = 0, parent = body) => { const mm = box(x1 - x0, y1 - y0, z1 - z0, m, r); mm.position.set((x0 + x1)/2, (y0 + y1)/2, (z0 + z1)/2); parent.add(mm); return mm; };
+  for (const [x0, x1] of [[-32, -25], [-18, -11], [11, 18], [25, 32]]) for (const [z0, z1] of [[11, 19], [-19, -11]]) B(x0, 0, z0, x1, 16, z1);
+  B(-32, 15, -20, 32, 61, 20, skin, 3);
+  const arm = side => { const p = new THREE.Group(); p.position.set(side*32, 44, 8); body.add(p); B(side > 0 ? 0 : -9, -14, -6, side > 0 ? 9 : 0, 0, 6, skin, 1.5, p); return p; };
+  const armR = arm(1), armL = arm(-1);
+  // pixel eyes on a transparent plane over the front face
+  const eyeTex = canvasTex(256, 112, () => {}); eyeTex.magFilter = THREE.NearestFilter;
+  const eyes = new THREE.Mesh(new THREE.PlaneGeometry(64, 28), new THREE.MeshBasicMaterial({ map:eyeTex, transparent:true })); eyes.position.set(0, 42, 20.4); body.add(eyes);
+  const drawEyes = e => eyeTex.redraw((g, w, h) => { g.fillStyle = INK; const U = 4, cx = [12.5*U, 51.5*U], cy = h/2;
+    for (let i = 0; i < 2; i++){ const x = cx[i], s = i ? -1 : 1;
+      if (e === 'closed'){ g.fillRect(x - 22, cy - 2, 44, 9); }
+      else if (e === 'happy'){ g.beginPath(); g.moveTo(x - 22, cy + 12); g.lineTo(x, cy - 12); g.lineTo(x + 22, cy + 12); g.lineTo(x + 12, cy + 12); g.lineTo(x, cy); g.lineTo(x - 12, cy + 12); g.fill(); }
+      else if (e === 'gt'){ g.beginPath(); g.moveTo(x - 18*s, cy - 20); g.lineTo(x + 20*s, cy - 4); g.lineTo(x + 20*s, cy + 4); g.lineTo(x - 18*s, cy + 20); g.lineTo(x - 18*s, cy + 10); g.lineTo(x + 4*s, cy); g.lineTo(x - 18*s, cy - 10); g.fill(); }
+      else if (e === 'wink' && i === 1){ g.fillRect(x - 20, cy, 40, 8); }
+      else if (e === 'focus'){ g.fillRect(x - 15, cy - 14, 30, 34); g.save(); g.translate(x, cy - 28); g.rotate(i ? .25 : -.25); g.fillRect(-20, -4, 40, 8); g.restore(); }
+      else g.fillRect(x - 19, cy - 21, 38, 42); } });
+  let cur = expr; drawEyes(cur);
+  // hats
+  const H = {
+    deerstalker: () => { B(-34, 61, -23, 34, 62.6, 25, HATM.brown); B(-31, 62.6, -18, 31, 68, 19, HATM.brown); B(-25, 68, -15, 25, 72.5, 16, HATM.brown); B(-18, 72.5, -11, 18, 76, 12, HATM.brown); B(-10, 76, -6, 10, 78.5, 7, HATM.brown); B(-6, 78.5, -1, -2, 82, 2, HATM.dark); B(2, 78.5, -1, 6, 82, 2, HATM.dark); },
+    headphones: () => { B(-38, 50, -7, -32, 63, 8, HATM.cobalt, 2); B(32, 50, -7, 38, 63, 8, HATM.cobalt, 2); B(-37, 63, -3, -34, 72, 3, HATM.cobalt); B(34, 63, -3, 37, 72, 3, HATM.cobalt); B(-37, 72, -3, 37, 75.5, 3, HATM.cobalt, 1); },
+    chef: () => { B(-27, 61, -17, 27, 68, 17, HATM.white); B(-29, 68, -18, -9, 77, 18, HATM.white, 4); B(-9, 68, -18, 11, 81, 18, HATM.white, 4); B(11, 68, -18, 29, 76, 18, HATM.white, 4); },
+    captain: () => { B(-30, 61, -18, 30, 66, 18, HATM.dark); B(-33, 66, -21, 33, 71, 21, HATM.white, 1.5); B(-20, 61, 18, 20, 62.6, 27, HATM.dark); B(-5, 62.6, 18, 5, 65.6, 19, HATM.mustard); },
+    hardhat: () => { B(-35, 61, -23, 35, 63, 25, HATM.mustard); B(-28, 63, -17, 28, 70, 18, HATM.mustard, 2); B(-20, 70, -11, 20, 74, 12, HATM.mustard, 2); const l = M(cylg(2.6, 2.6, 3, 16), HATM.steel); l.rotation.x = Math.PI/2; l.position.set(0, 66.5, 19.5); body.add(l); },
+  };
+  if (hat) H[hat]();
+  // tools (they ride on an arm, so they move with it)
+  const T = {
+    magnifier: () => { const r = armR; const h = M(cylg(1.2, 1.2, 12), HATM.dark); h.position.set(9, -6, 4); h.rotation.z = -.7; r.add(h);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(7, 1.4, 8, 28), HATM.dark); rim.position.set(16, 1, 6); rim.castShadow = true; r.add(rim);
+      const lens = new THREE.Mesh(new THREE.CircleGeometry(6.4, 28), new THREE.MeshPhysicalMaterial({ color:'#e6f4f6', transparent:true, opacity:.55, roughness:.05 })); lens.position.copy(rim.position); r.add(lens); },
+    mug: () => { const m = M(cylg(5, 5, 10, 20), HATM.white); m.position.set(-13, -6, 6); armL.add(m); const c = new THREE.Mesh(new THREE.CircleGeometry(4.2, 20), new THREE.MeshBasicMaterial({ color:'#4a2c1c' })); c.rotation.x = -Math.PI/2; c.position.set(-13, -.9, 6); armL.add(c);
+      const hd = new THREE.Mesh(new THREE.TorusGeometry(3, .9, 6, 14, Math.PI), HATM.white); hd.position.set(-18, -6, 6); hd.rotation.z = Math.PI/2; armL.add(hd); },
+    pan: () => { const h = M(cylg(1, 1, 10), HATM.dark); h.position.set(12, -7, 6); h.rotation.z = Math.PI/2; armR.add(h); const p = M(cylg(9, 8, 3, 22), HATM.dark); p.position.set(25, -7, 6); armR.add(p);
+      const egg = M(new THREE.BoxGeometry(4, 2, 4), HATM.mustard); egg.position.set(25, -4.6, 6); armR.add(egg); root.userData.egg = egg; },
+    launch: () => { const b = B(4, -12, -2, 18, -4, 12, HATM.dark, 1, armR); const btn = M(cylg(3, 3, 2.5, 16), HATM.red); btn.position.set(11, -2.8, 5); armR.add(btn); root.userData.btn = btn; },
+    wrench: () => { const h = M(new THREE.BoxGeometry(14, 2.4, 2.4), HATM.steel); h.position.set(12, -7, 6); armR.add(h); const hd = M(new THREE.BoxGeometry(4, 6, 2.4), HATM.steel); hd.position.set(20, -7, 6); armR.add(hd); },
+  };
+  if (tool) T[tool]();
+  shadowy(root);
+  // behaviour
+  const phase = Math.random()*6; let working = 0, blinkAt = 1 + Math.random()*3, asleep = expr === 'closed';
+  const U = root.userData;
+  Object.assign(U, { name,
+    setExpr(e){ if (e !== cur){ cur = e; drawEyes(e); } },
+    sleep(v){ asleep = v; U.setExpr(v ? 'closed' : 'open'); anim(.35, k => body.scale.y = AG_S*(v ? 1 - .1*k : .9 + .1*k)); },
+    hop(hgt = .05){ const y0 = U.baseY ?? (U.baseY = root.position.y); sfx('tap');
+      return anim(.5, k => { root.position.y = y0 + Math.sin(k*Math.PI)*hgt; const sq = k < .15 ? 1 - k*1.2 : k > .85 ? 1 - (1 - k)*1.2 : 1 + .06*Math.sin(k*Math.PI); body.scale.set(AG_S*(2 - sq), AG_S*sq*(asleep ? .9 : 1), AG_S*(2 - sq)); }); },
+    work(sec = 1.6, e = 'gt', after = 'open'){ working = sec; U.setExpr(e); U.after = after; },
+    face(target){ const p = new THREE.Vector3(); root.getWorldPosition(p); const a = Math.atan2(target.x - p.x, target.z - p.z), a0 = root.rotation.y; return anim(.3, k => root.rotation.y = a0 + (a - a0)*k); },
+  });
+  onFrame((dt, t) => {
+    body.position.y = asleep ? 0 : Math.sin(t*2.2 + phase)*.0009;   // gentle breathing
+    if (working > 0){ working -= dt; armR.rotation.x = Math.sin(t*16)*.5; armL.rotation.x = -Math.sin(t*16)*.5;
+      if (U.btn) U.btn.position.y = -2.8 - (Math.sin(t*16) > .6 ? 1.2 : 0);
+      if (U.egg) U.egg.position.y = -4.6 + Math.abs(Math.sin(t*8))*14;
+      if (working <= 0){ armR.rotation.x = armL.rotation.x = 0; if (U.egg) U.egg.position.y = -4.6; U.setExpr(U.after || 'open'); } }
+    else if (!asleep && t > blinkAt && (cur === 'open' || cur === 'happy')){ const keep = cur; U.setExpr('closed'); setTimeout(() => { if (!asleep && working <= 0 && cur === 'closed') U.setExpr(keep); }, 130); blinkAt = t + 2.5 + Math.random()*3; }
+  });
+  return root;
+}
+
+/* ---------- interaction registry ---------- */
+const tappables = []; let hovered = null;
+function tappable(obj, name, onTap){ obj.userData.tap = { name, onTap }; obj.traverse(c => { if (c.isMesh) c.userData.tapRoot = obj; }); tappables.push(obj); return obj; }
+
+/* ---------- left page layout ---------- */
+let LP = { blocks:[], options:[], flapRect:null };
+function drawLeft(lesson, state){
+  leftTex.redraw((g, w, h) => {
+    paperBg(g, w, h); LP = { blocks:[], options:[], flapRect:null };
+    const X = 120, MW = w - 240; let y = 120;
+    g.fillStyle = '#9a9184'; g.font = `500 22px ${MONO}`; g.textAlign = 'left'; g.fillText('CLAUDE CODE CHIPS', X, y); g.textAlign = 'right'; g.fillText(`LESSON ${lesson.n}`, w - X, y); g.textAlign = 'left';
+    y += 80; const b0 = y;
+    g.fillStyle = CLAY; g.font = `700 25px ${MONO}`; g.fillText(`LESSON ${lesson.n}`, X, y); y += 70;
+    g.fillStyle = INK; g.font = `700 74px ${SERIF}`; g.fillText(lesson.title, X, y); y += 52;
+    lesson.intro.forEach(p => { y += 10; richWrap(g, p, MW, 36).forEach(l => { y += 47; richLine(g, l, X, y, 36); }); });
+    LP.blocks.push({ r:[X, b0 - 30, MW, y - b0 + 50], k:`Lesson ${lesson.n}`, h:lesson.title, body:lesson.intro });
+    // equation
+    y += 46; const e0 = y;
+    g.fillStyle = '#f3ede1'; const eh = 92 + lesson.eqNotes.length*38; g.fillRect(X - 20, y - 4, MW + 40, eh); g.strokeStyle = '#d8cdb8'; g.lineWidth = 2; g.strokeRect(X - 20, y - 4, MW + 40, eh);
+    g.fillStyle = CLAY; g.font = `700 21px ${MONO}`; g.fillText('THE EQUATION', X, y + 30);
+    g.fillStyle = INK; g.font = `italic 600 40px ${SERIF}`; g.fillText(lesson.eq, X, y + 80);
+    g.font = `400 26px ${SERIF}`; g.fillStyle = '#5c544a'; lesson.eqNotes.forEach((n, i) => richLine(g, n, X, y + 122 + i*38, 26, '#5c544a'));
+    LP.blocks.push({ r:[X - 20, e0 - 4, MW + 40, eh], k:'The equation', h:lesson.eq, body:lesson.eqNotes }); y += eh + 30;
+    // key words
+    const k0 = y; g.fillStyle = CLAY; g.font = `700 21px ${MONO}`; g.fillText('KEY WORDS', X, y + 20); y += 34;
+    lesson.keys.forEach(([term, def]) => { y += 42; richLine(g, `**${term}**  ${def}`, X, y, 30); });
+    LP.blocks.push({ r:[X, k0 - 10, MW, y - k0 + 30], k:'Key words', body:lesson.keys.map(([t, d]) => `**${t}**: ${d}`) }); y += 46;
+    // predict
+    const p0 = y; g.fillStyle = CLAY; g.font = `700 21px ${MONO}`; g.fillText('PREDICT', X, y); y += 8;
+    g.font = `600 31px ${SERIF}`; g.fillStyle = INK; wrap(g, lesson.predict.q, MW).forEach(l => { y += 42; g.fillText(l, X, y); });
+    y += 12;
+    lesson.predict.a.forEach((opt, i) => { y += 46; const chosen = state.pick === i, right = state.flap && i === lesson.predict.ok;
+      g.strokeStyle = INK; g.lineWidth = 2.5; g.strokeRect(X + 4, y - 26, 28, 28);
+      if (chosen){ g.strokeStyle = state.flap ? (i === lesson.predict.ok ? '#1f8a4c' : '#c0392b') : CLAY; g.lineWidth = 6; g.beginPath(); g.moveTo(X + 8, y - 12); g.lineTo(X + 17, y - 2); g.lineTo(X + 40, y - 36); g.stroke(); }
+      if (right){ g.fillStyle = '#1f8a4c'; g.font = `700 20px ${MONO}`; g.fillText('RIGHT', X + MW - 70, y - 4); }
+      g.fillStyle = INK; g.font = `${chosen ? 600 : 400} 31px ${SERIF}`; g.fillText(opt, X + 50, y);
+      LP.options.push({ i, r:[X, y - 34, MW, 44] }); });
+    LP.blocks.push({ r:[X, p0 - 26, MW, y - p0 + 40], k:'Predict', h:lesson.predict.q, body:lesson.predict.a.map((a, i) => `${'ABC'[i]}.  ${a}`) });
+    // why (under the flap)
+    y += 50; g.font = `400 27px ${SERIF}`; const whyL = wrap(g, lesson.why, MW - 30); const fh = Math.min(h - 150 - y, Math.max(240, 80 + whyL.length*36)); LP.flapRect = [X - 16, y, MW + 32, fh];
+    g.fillStyle = '#f7f1e3'; g.fillRect(X - 16, y, MW + 32, fh);
+    g.fillStyle = CLAY; g.font = `700 21px ${MONO}`; g.fillText('WHY?', X + 6, y + 40);
+    g.fillStyle = INK; let yy = y + 50; richWrap(g, lesson.why, MW - 30, 27).forEach(l => { yy += 36; richLine(g, l, X + 6, yy, 27); });
+    LP.blocks.push({ r:LP.flapRect, k:'Why?', h:null, body:[lesson.why], flap:true });
+    g.fillStyle = '#9a9184'; g.font = `500 22px ${MONO}`; g.textAlign = 'center'; g.fillText(String(lesson.n*2), w/2, h - 64); g.textAlign = 'left';
+  });
+  lensImg = null;
+}
+function drawRight(lesson){
+  rightTex.redraw((g, w, h) => { paperBg(g, w, h);
+    g.fillStyle = '#9a9184'; g.font = `500 22px ${MONO}`; g.textAlign = 'right'; g.fillText(lesson.title.toUpperCase(), w - 120, 120); g.textAlign = 'left';
+    // pop-up fold lines
+    g.strokeStyle = 'rgba(80,70,55,.18)'; g.setLineDash([10, 10]); g.lineWidth = 2; g.beginPath(); g.moveTo(100, h*.5); g.lineTo(w - 100, h*.5); g.stroke(); g.setLineDash([]);
+    g.fillStyle = '#5c544a'; g.font = `italic 400 30px ${SERIF}`; g.fillText(`Fig. ${lesson.n}  ${lesson.fig}`, 120, h - 190);
+    g.fillStyle = INK; g.font = `600 30px ${SERIF}`; g.fillText(lesson.tapHint, 120, h - 140);
+    g.fillStyle = '#9a9184'; g.font = `500 22px ${MONO}`; g.textAlign = 'center'; g.fillText(String(lesson.n*2 + 1), w/2, h - 64); g.textAlign = 'left'; });
+}
+// the flap (hinged on its top edge, lives on the left page)
+const flapTex = canvasTex(1200, 300, () => {});
+const flapPivot = new THREE.Group(); leftHalf.add(flapPivot);
+const flapTop = new THREE.MeshLambertMaterial({ map:flapTex, transparent:true }), flapSide = new THREE.MeshLambertMaterial({ color:'#efe5cf', transparent:true });
+const flap = M(new THREE.BoxGeometry(1, .004, 1), [flapSide, flapSide, flapTop, flapSide, flapSide, flapSide], false); inked(flap); flap.children[0].material = LINEMAT.clone(); flapPivot.add(flap); flap.visible = false;
+function placeFlap(){
+  const [x, y, w, h] = LP.flapRect, W = leftTex.userData.cv.width, H = leftTex.userData.cv.height;
+  const fw = w/W*PW, fh = h/H*PH, x0 = -PW + x/W*PW, z0 = -PH/2 + y/H*PH;
+  flapPivot.position.set(x0 + fw/2, .0035, z0); flap.scale.set(fw, 1, fh); flap.position.set(0, 0, fh/2);
+  flapTex.redraw((g, cw, ch) => { paperBg(g, cw, ch, '#efe5cf'); g.strokeStyle = '#c9b996'; g.lineWidth = 4; g.strokeRect(6, 6, cw - 12, ch - 12);
+    g.fillStyle = CLAY; g.font = `700 ${ch*.11}px ${MONO}`; g.fillText('WHY?', 50, ch*.28);
+    g.fillStyle = INK; g.font = `600 ${ch*.17}px ${SERIF}`; g.fillText('Lift the flap to see the answer', 50, ch*.53);
+    g.fillStyle = '#7a7266'; g.font = `italic 400 ${ch*.11}px ${SERIF}`; g.fillText('after you have made your prediction', 50, ch*.74);
+    g.font = `italic 600 ${ch*.1}px ${SERIF}`; g.fillStyle = '#5c544a'; g.fillText('lift here', cw - 220, ch*.3);
+    g.strokeStyle = '#5c544a'; g.lineWidth = 3; g.beginPath(); g.moveTo(cw - 170, ch*.38); g.quadraticCurveTo(cw - 120, ch*.6, cw - 80, ch*.82); g.stroke();
+    g.beginPath(); g.moveTo(cw - 80, ch*.82); g.lineTo(cw - 100, ch*.7); g.moveTo(cw - 80, ch*.82); g.lineTo(cw - 95, ch*.86); g.stroke(); });
+  flapTex.repeat.set(1, 1); flapPivot.rotation.x = 0; flapOpen = false; flap.visible = true; flapTop.opacity = flapSide.opacity = 1;
+}
+let flapOpen = false;
+function toggleFlap(force){ const to = force ?? !flapOpen; if (to === flapOpen) return; flapOpen = to; const from = flapPivot.rotation.x, end = to ? -1.25 : 0; sfx('flap');
+  ST.flap = to; drawLeft(LESSONS[cur], ST); flap.visible = true;
+  const fo = to ? 1 : 0, fe = to ? 0 : 1; anim(.7, k => { flapPivot.rotation.x = from + (end - from)*k; const op = fo + (fe - fo)*Math.min(1, k*1.4); flapTop.opacity = flapSide.opacity = op; flap.children[0].material.opacity = .82*op; }, () => { if (to) flap.visible = false; }); }
+
+/* ---------- lessons ---------- */
+const LESSONS = [];
+const SONNET = { in:2, out:10, write:2.5, read:.1 };   // Sonnet 5.5, $ per million tokens
+const money = v => v < .01 ? '$' + v.toFixed(4) : '$' + v.toFixed(v < 1 ? 3 : 2);
+
+/* Lesson 1: the token jars */
+LESSONS.push({ n:1, title:'Token jars', fig:'Five things, four jars.', tapHint:'Tap each thing in the scene to fill its jar.',
+  intro:['Claude Code pays by the token. Every request it sends fills four jars: what goes **in**, what comes **out**, what is **written** to the cache, and what is **read** back from it.',
+         'The jars are not the work itself. They are a model that helps us keep track of the bill.'],
+  eq:'cost = in·p + out·5p + write·1.25p + read·0.05p',
+  eqNotes:['p = the input price per token. On Sonnet 5.5, $2 per million.', 'Output costs 5× input on every current model; thinking counts as output.'],
+  keys:[['input','everything sent: prompt, files, history, CLAUDE.md'], ['output','everything written back, thinking included'], ['cache write','a prefix saved for reuse (5 minutes by default)'], ['cache read','that prefix sent again, for a fraction of the price']],
+  predict:{ q:'You ask a second question two minutes later. What happens to CLAUDE.md?', a:['It is sent again at full price', 'It is read back from the cache, far cheaper', 'It is skipped'], ok:1 },
+  why:'The first request wrote the start of the conversation, CLAUDE.md included, to the prompt cache. Inside the cache lifetime (5 minutes by default) the next request reads it back at a small fraction of the input price: 0.05× on Sonnet 5.5. After a long break the cache goes cold and the next request pays to write it again.',
+  build(G){
+    const JX = [.2, .4, .6, .8], names = ['input', 'output', 'write', 'read'], titles = ['Input', 'Output', 'Cache write', 'Cache read'];
+    // shelf
+    const shelf = new THREE.Group(); G.add(shelf);
+    shelf.add(at(box(.86, .018, .2, PAPER, .004), .5, .009, -.42));
+    for (const x of [.075, .925]){ shelf.add(at(box(.02, .32, .02), x, .16, -.51), at(box(.02, .32, .02), x, .16, -.33)); }
+    shelf.add(at(box(.87, .014, .014), .5, .33, -.51), at(box(.87, .014, .014), .5, .33, -.33));
+    for (const x of [.075, .925]) shelf.add(at(box(.014, .014, .18), x, .33, -.42));
+    const jars = {}, labels = {};
+    names.forEach((k, i) => { const j = makeJar(.065, .26, COL[k]); at(j, JX[i], .018, -.44); shelf.add(j); jars[k] = j;
+      const lb = jarLabel(titles[i], COL[k]); at(lb, JX[i], .045, -.28); shelf.add(lb); labels[k] = lb; });
+    // the sun of this desk: a little lamp
+    const tot = { input:0, output:0, write:0, read:0 }, MAX = 60000;
+    const bill = labelCard(.21, .16, () => {}); at(bill, .82, .13, .085); bill.rotation.x = 1.2; G.add(bill);
+    const printer = at(box(.22, .05, .12, PAPER, .01), .82, .025, .1); G.add(printer);
+    const setBill = () => { const c = (tot.input*SONNET.in + tot.output*SONNET.out + tot.write*SONNET.write + tot.read*SONNET.read)/1e6;
+      bill.userData.tex.redraw((g, w, h) => { g.fillStyle = '#fffdf6'; g.fillRect(0,0,w,h); g.fillStyle = INK; g.font = `600 ${h*.1}px ${MONO}`; g.fillText('RECEIPT · SONNET 5.5', 22, h*.18);
+        g.font = `400 ${h*.1}px ${MONO}`; g.fillStyle = '#6b6357'; [['in', tot.input], ['out', tot.output], ['write', tot.write], ['read', tot.read]].forEach(([k, v], i) => g.fillText(`${k.padEnd(6)}${fmtK(v).padStart(6)}`, 22, h*(.36 + i*.12)));
+        g.fillStyle = INK; g.font = `700 ${h*.2}px ${SERIF}`; g.textAlign = 'right'; g.fillText(money(c), w - 22, h*.9); }); };
+    setBill();
+    const add = (k, v, cap) => { tot[k] += v; jars[k].userData.set(tot[k], MAX); labels[k].userData.set(tot[k]); setBill(); sfx('fill'); caption(cap); };
+    // objects
+    const scroll = new THREE.Group(); scroll.add(at(M(cylg(.028, .028, .2), PAPER), 0, .028, 0)); scroll.children[0].rotation.z = Math.PI/2;
+    const sheet = M(new THREE.BoxGeometry(.18, .003, .16), PAPER); at(sheet, 0, .002, .09); scroll.add(sheet);
+    const pt = canvasTex(400, 360, (g, w, h) => { paperBg(g, w, h); g.fillStyle = INK; g.font = `600 34px ${MONO}`; g.fillText('> fix the', 20, 70); g.fillText('  login bug', 20, 120); g.fillStyle = '#9a9184'; for (let i = 0; i < 4; i++) g.fillRect(20, 170 + i*40, 300 - i*40, 10); });
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(.17, .15), new THREE.MeshLambertMaterial({ map:pt })); pl.rotation.x = -Math.PI/2; at(pl, 0, .0045, .09); scroll.add(pl);
+    at(scroll, .17, 0, -.02); G.add(scroll); tappable(scroll, 'Your prompt', () => add('input', 2000, 'Your prompt goes in: +2k input tokens.'));
+    const nb = new THREE.Group(); nb.add(at(box(.15, .03, .2, hatchMat('#efe6d6'), .006), 0, .015, 0));
+    const nt = canvasTex(400, 520, (g, w, h) => { g.fillStyle = '#efe6d6'; g.fillRect(0,0,w,h); g.fillStyle = CLAY; g.fillRect(0, 0, w, 90); g.fillStyle = '#fff'; g.font = `700 52px ${MONO}`; g.fillText('CLAUDE.md', 22, 64);
+      g.fillStyle = '#9a9184'; for (let i = 0; i < 7; i++) g.fillRect(28, 140 + i*48, 330 - (i % 3)*60, 12); });
+    const ntp = new THREE.Mesh(new THREE.PlaneGeometry(.145, .195), new THREE.MeshLambertMaterial({ map:nt })); ntp.rotation.x = -Math.PI/2; at(ntp, 0, .031, 0); nb.add(ntp); nb.rotation.y = .25;
+    at(nb, .4, 0, -.03); G.add(nb); let cached = false;
+    tappable(nb, 'CLAUDE.md', () => { if (!cached){ cached = true; add('write', 6000, 'CLAUDE.md is written to the cache: 6k at 1.25× input price.'); } else add('read', 6000, 'CLAUDE.md is read from the warm cache: 6k at 0.05× on Sonnet 5.5.'); });
+    const files = new THREE.Group(); for (let i = 0; i < 5; i++){ const s = M(new THREE.BoxGeometry(.16, .006, .2), PAPER); s.position.set(Math.sin(i*1.7)*.01, .004 + i*.008, Math.cos(i*2.3)*.01); s.rotation.y = (i - 2)*.06; files.add(s); }
+    at(files, .63, 0, -.02); G.add(files); tappable(files, 'Files it reads', () => add('input', 18000, 'Files it reads go in too: +18k input tokens.'));
+    const bulb = new THREE.Group(); bulb.add(at(M(cylg(.03, .034, .045), hatchMat('#d7d2c8')), 0, .022, 0));
+    const bgl = new THREE.Mesh(new THREE.SphereGeometry(.058, 28, 20), new THREE.MeshPhysicalMaterial({ color:0xfff6dc, transparent:true, opacity:.4, roughness:.1, emissive:0xffd27a, emissiveIntensity:0 })); at(bgl, 0, .1, 0); bulb.add(bgl); bulb.add(at(ring(.058, .002), 0, .1, 0));
+    bulb.add(inkTube([[-.012, .05, 0], [-.012, .095, 0], [0, .11, 0], [.012, .095, 0], [.012, .05, 0]], .0022));
+    at(bulb, .17, .19, .3); bulb.scale.setScalar(.7); G.add(bulb);
+    const thinker = makeAgent({}); at(thinker, .17, 0, .31); G.add(thinker);
+    const think = () => { thinker.userData.work(1.6, 'focus', 'happy'); bgl.material.emissiveIntensity = 1.4; anim(1.6, k => bgl.material.emissiveIntensity = 1.4*(1 - k)); add('output', 4000, 'The agent thinks. Thinking is billed as output: +4k at 5× the input price.'); };
+    tappable(bulb, 'Thinking', think); tappable(thinker, 'The agent', think);
+    const mkt = makeAgent({ tool:'launch' }); at(mkt, .72, 0, .38); mkt.rotation.y = -.35; G.add(mkt);
+    tappable(mkt, 'Marketing agent', () => { mkt.userData.work(1.2, 'gt', 'happy'); mkt.userData.hop(.03); add('output', 2500, 'The marketing agent writes three headlines: +2.5k output.'); });
+    const term = new THREE.Group(); term.add(at(box(.2, .13, .12, hatchMat('#e9e4da'), .012), 0, .065, 0));
+    const tt = canvasTex(360, 240, (g, w, h) => { g.fillStyle = '#1d2a26'; g.fillRect(0,0,w,h); g.fillStyle = '#8af0ae'; g.font = `600 30px ${MONO}`; g.fillText('$ claude', 18, 50); g.fillStyle = '#e9e4da'; g.fillText('fixed auth.ts', 18, 110); g.fillText('tests: 12 ok', 18, 160); g.fillStyle = '#8af0ae'; g.fillRect(18, 190, 18, 26); });
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(.17, .1), new THREE.MeshBasicMaterial({ map:tt })); at(scr, 0, .067, .0605); term.add(scr); term.rotation.y = -.2;
+    at(term, .44, 0, .3); G.add(term); tappable(term, 'The answer', () => add('output', 1500, 'The answer comes out: +1.5k output tokens.'));
+    return { shots:[ { cap:'Five things, four jars.', cam:[.55, .95, 1.05], tgt:[.5, .1, -.1] },
+      { cap:'Your prompt goes in.', focus:scroll, act:() => scroll.userData.tap.onTap() },
+      { cap:'Files it reads go in too.', focus:files, act:() => files.userData.tap.onTap() },
+      { cap:'CLAUDE.md is written to the cache.', focus:nb, act:() => nb.userData.tap.onTap() },
+      { cap:'The agent thinks: billed as output.', focus:thinker, act:() => thinker.userData.tap.onTap() },
+      { cap:'Second question: CLAUDE.md read from cache.', focus:nb, act:() => nb.userData.tap.onTap() },
+      { cap:'The receipt adds it all up.', cam:[1.05, .55, .45], tgt:[.75, .05, .05] } ] };
+  } });
+
+/* Lesson 2: agent chips (subagents) */
+LESSONS.push({ n:2, title:'Agent chips', fig:'Three agents, three chips, one board.', tapHint:'Tap an agent to plug its chip into the board.',
+  intro:['A subagent is a chip you plug into the main board. It runs with its **own context window**, does the noisy work, and sends back only a summary.',
+         'Tests, logs and documentation fill a context fast. Inside a chip, that noise never reaches your main conversation.'],
+  eq:'main context = your task + summaries',
+  eqNotes:['A chip\'s own context holds everything it read, then is thrown away.', 'Its tokens still count, so give simple chips a smaller model.'],
+  keys:[['subagent','a separate Claude with its own context and tools'], ['summary','the short result a chip hands back'], ['model: haiku','one line in a subagent file for a cheaper chip'], ['.claude/agents/','where project subagent files live']],
+  predict:{ q:'Your test suite prints 9,000 lines. Where should they land?', a:['In the main conversation', 'In a subagent, with only the failures sent back', 'Nowhere: skip the tests'], ok:1 },
+  why:'In a subagent. The 9,000 lines fill the chip\'s own context window; the main conversation receives a summary like "2 failed: auth.test.ts, cart.test.ts". The chip\'s requests still draw on your usage, so a simple job can run on `model: haiku`.',
+  build(G){
+    const pcb = at(box(.84, .02, .58, hatchMat('#e3ece4'), .012), .5, .01, -.17); G.add(pcb);
+    const traceM = new THREE.MeshBasicMaterial({ color:'#86a893' });
+    [[.38,-.2,.55,-.2],[.38,-.16,.7,-.16],[.38,-.24,.85,-.24]].forEach(([a,b,c,d], i) => G.add(inkTube([[a, .021, b], [(a + c)/2, .021, b + (i - 1)*.04], [c, .021, d]], .0022, traceM)));
+    const mainChip = makeChip('MAIN', 'your chat', CLAY, .2); at(mainChip, .3, .02, -.2); G.add(mainChip); mainChip.userData.setActive(true);
+    const mainJar = makeJar(.07, .3, COL.input); at(mainJar, .12, .02, -.38); G.add(mainJar);
+    const mainLbl = jarLabel('Main context', COL.input); at(mainLbl, .2, .06, -.08); mainLbl.scale.set(1.15, 1, 1.05); G.add(mainLbl);
+    const ghost = ring(.078, .0025, new THREE.MeshBasicMaterial({ color:'#c0392b', transparent:true, opacity:0 })); at(ghost, .12, .032, -.38); G.add(ghost);
+    let main = 8000, ghostV = 8000; const MAXM = 260000; mainJar.userData.set(main, MAXM); mainLbl.userData.set(main);
+    const CH = [ { key:'EXPLORE', sub:'reads the repo', tok:60000, sum:1500, col:COL.write, x:.6, ag:{ hat:'deerstalker', tool:'magnifier' }, who:'The SEO detective' },
+                 { key:'TESTS', sub:'runs the suite', tok:110000, sum:800, col:COL.output, x:.75, ag:{ tool:'mug' }, who:'The engineer' },
+                 { key:'LOGS', sub:'greps the logs', tok:80000, sum:600, col:COL.read, x:.9, ag:{ hat:'hardhat', tool:'wrench' }, who:'Systems & Control' } ];
+    CH.forEach((c, i) => {
+      const sock = at(box(.1, .012, .1, hatchMat('#cfc8bb'), .004), c.x - .03, .026, -.2); G.add(sock);
+      const jar = makeJar(.038, .2, c.col); at(jar, c.x - .03, .02, -.39); G.add(jar);
+      const chip = makeChip(c.key, c.sub, c.col, .075); const home = new THREE.Vector3(.2 + i*.27, 0, .44); chip.position.copy(home); chip.rotation.y = (i - 1)*.2; G.add(chip);
+      const agent = makeAgent(c.ag); at(agent, .2 + i*.27, 0, .27); G.add(agent);
+      let plugged = false;
+      const go = async () => {
+        if (plugged){ agent.userData.hop(.03); caption(`${c.key} is already plugged in.`); return; } plugged = true;
+        agent.userData.setExpr('happy'); await agent.userData.hop(.06);
+        const p0 = chip.position.clone(), r0 = chip.rotation.y, p1 = new THREE.Vector3(c.x - .03, .032, -.2);
+        await anim(.8, k => { chip.position.lerpVectors(p0, p1, k); chip.position.y += Math.sin(k*Math.PI)*.2; chip.rotation.y = r0*(1 - k) + Math.sin(k*Math.PI)*2; });
+        sfx('thud'); chip.userData.setActive(true); agent.userData.work(2.4, 'gt', 'focus');
+        caption(`${c.who} works inside ${c.key}: ${fmtK(c.tok)} tokens in its own context.`);
+        await jar.userData.set(c.tok, 120000); await wait(.4);
+        main += c.sum; ghostV += c.tok; mainJar.userData.set(main, MAXM); mainLbl.userData.set(main, `without chips ${fmtK(ghostV)}`);
+        ghost.material.opacity = .85; ghost.position.y = .032 + Math.min(1, ghostV/MAXM)*.288;
+        agent.userData.setExpr('happy'); agent.userData.hop(.04);
+        caption(`Only the summary comes back: +${fmtK(c.sum)} to the main context.`);
+      };
+      tappable(agent, c.key + ' agent', go); tappable(chip, c.key + ' chip', go);
+      c.obj = agent;
+    });
+    return { shots:[ { cap:'Three agents, three chips, one board.', cam:[.6, 1.0, 1.15], tgt:[.5, .05, 0] },
+      ...CH.map(c => ({ cap:`${c.who} plugs in ${c.key}.`, focus:c.obj, act:() => c.obj.userData.tap.onTap(), hold:3.6 })),
+      { cap:'Main context stays small. The red ring is where it would be.', cam:[.18, .6, .35], tgt:[.15, .15, -.38] } ] };
+  } });
+
+/* Lesson 3: pick the right chip (model choice) */
+LESSONS.push({ n:3, title:'Pick the right chip', fig:'Same job, three chips.', tapHint:'Tap a chip and the agent runs the job on it.',
+  intro:['Bigger chips think harder and cost more. The same job can cost forty times more on the wrong chip.',
+         'Sonnet handles most coding work. Save Opus for hard architecture and long reasoning; give simple subagent jobs to Haiku.'],
+  eq:'job = 80k × in-price + 8k × out-price',
+  eqNotes:['Per million tokens, in / out: Haiku 5.5 $0.10 / $0.50 (prompts up to 100k),', 'Sonnet 5.5 $2 / $10, Opus 5.5 $4 / $20.'],
+  keys:[['/model','switch the chip mid-session'], ['model: haiku','pick the chip in a subagent file'], ['/effort','turn thinking down for simple work'], ['output price','5× the input price on all three']],
+  predict:{ q:'A chip only renames files across a folder. Which model?', a:['Opus, to be safe', 'Haiku', 'It makes no difference'], ok:1 },
+  why:'Haiku. Renaming needs no deep reasoning. On this 80k in / 8k out job Haiku costs about $0.012, Sonnet $0.24 and Opus $0.48: forty times more for the same renamed files.',
+  build(G){
+    const M3 = [ { k:'HAIKU', price:[.1, .5], size:.1, x:.2, col:COL.read, face:'happy' }, { k:'SONNET', price:[2, 10], size:.14, x:.48, col:COL.write, face:'open' }, { k:'OPUS', price:[4, 20], size:.19, x:.79, col:COL.output, face:'gt' } ];
+    const tk = labelCard(.26, .12, (g, w, h) => { g.fillStyle = '#fff8e8'; g.fillRect(0,0,w,h); g.fillStyle = CLAY; g.font = `700 ${h*.13}px ${MONO}`; g.fillText('THE JOB', 24, h*.24);
+      g.fillStyle = INK; g.font = `600 ${h*.2}px ${SERIF}`; g.fillText('80k in · 8k out', 24, h*.55); g.font = `italic 400 ${h*.14}px ${SERIF}`; g.fillStyle = '#6b6357'; g.fillText('rename 40 files, update imports', 24, h*.82); });
+    at(tk, .72, .02, .45); tk.rotation.x = .35; tk.rotation.z = -.04; G.add(tk);
+    const worker = makeAgent({ hat:'chef', tool:'pan' }); at(worker, .5, 0, .4); G.add(worker);
+    tappable(worker, 'The worker', () => { worker.userData.hop(.04); caption('Pick a chip for the job: tap Haiku, Sonnet or Opus.'); });
+    M3.forEach(c => {
+      const ped = at(box(c.size + .06, .05, c.size + .06, PAPER, .008), c.x, .025, -.3); G.add(ped);
+      const chip = makeChip(c.k, '5.5', c.col, c.size); at(chip, c.x, .05, -.3); G.add(chip);
+      const price = labelCard(.16, .08, (g, w, h) => { g.fillStyle = '#fbf9f2'; g.fillRect(0,0,w,h); g.fillStyle = c.col; g.fillRect(0,0,14,h); g.fillStyle = INK; g.font = `600 ${h*.2}px ${MONO}`; g.fillText('IN / OUT per M', 26, h*.3);
+        g.font = `700 ${h*.34}px ${SERIF}`; g.fillText(`$${c.price[0]} / $${c.price[1]}`, 26, h*.78); });
+      at(price, c.x, .04, -.12); price.rotation.x = .9; G.add(price);
+      const cost = (80000*c.price[0] + 8000*c.price[1])/1e6;
+      const coins = new THREE.Group(); at(coins, c.x + (c.x > .7 ? -.06 : .06), 0, .08); G.add(coins);
+      const coinM = new THREE.MeshStandardMaterial({ color:COL.gold, metalness:.6, roughness:.3, emissive:'#7a5a10', emissiveIntensity:.15 });
+      const total = labelCard(.12, .055, () => {}); at(total, coins.position.x, .03, .19); total.rotation.x = .9; G.add(total);
+      const setT = v => total.userData.tex.redraw((g, w, h) => { g.fillStyle = '#fffdf6'; g.fillRect(0,0,w,h); g.fillStyle = INK; g.textAlign = 'center'; g.font = `700 ${h*.5}px ${SERIF}`; g.fillText(v, w/2, h*.68); });
+      setT('$ ?'); let paid = false;
+      tappable(chip, c.k + ' chip', async () => {
+        if (paid){ caption(`${c.k[0] + c.k.slice(1).toLowerCase()} already ran the job: ${money(cost)}.`); return; } paid = true;
+        chip.userData.setActive(true); worker.userData.face(new THREE.Vector3(c.x, 0, -.3).applyMatrix4(G.matrixWorld));
+        worker.userData.hop(.05); worker.userData.work(1.4, c.face, c.face);
+        const nCoins = Math.max(1, Math.round(cost/.02));
+        caption(`${c.k[0] + c.k.slice(1).toLowerCase()} 5.5: the same job costs ${money(cost)}.`);
+        for (let i = 0; i < nCoins; i++){ const coin = new THREE.Mesh(cylg(.032, .032, .008, 24), coinM); coin.castShadow = true; coin.rotation.y = i; const y1 = .004 + i*.0085; coin.position.y = y1 + .3; coins.add(coin);
+          inked(coin, 40); anim(.28, k => coin.position.y = y1 + .3*(1 - k), null, t => t*t); if (i % 3 === 0) sfx('coin'); await wait(.05); }
+        setT(money(cost)); });
+      c.obj = chip;
+    });
+    return { shots:[ { cap:'Same job, three chips.', cam:[.55, .95, 1.15], tgt:[.5, .05, -.02] },
+      ...M3.map(c => ({ cap:`Run the job on ${c.k[0] + c.k.slice(1).toLowerCase()}.`, focus:c.obj, act:() => c.obj.userData.tap.onTap(), hold:2.8 })),
+      { cap:'Opus costs forty times Haiku here.', cam:[1.15, .55, .85], tgt:[.5, .06, .05] } ] };
+  } });
+
+/* Lesson 4: squeeze the context */
+LESSONS.push({ n:4, title:'Squeeze the context', fig:'One stack, four squeezes.', tapHint:'Tap each tool to shrink the stack.',
+  intro:['Every request carries the whole conversation. The taller the stack, the more each new message costs, even a one-line question.',
+         'Four habits keep it small: `/clear` between unrelated tasks, `/compact` when you need to keep going, a short CLAUDE.md, and a hook that filters noise before Claude reads it.'],
+  eq:'each message ≈ the stack × read price + new words',
+  eqNotes:['Check what fills the stack with `/context`, and the bill with `/usage`.', 'Keep CLAUDE.md under 200 lines; move workflows into skills.'],
+  keys:[['/clear','start fresh for unrelated work; costs nothing'], ['/compact','summarise to keep going; it reads the whole stack once'], ['skills','instructions that load only when used'], ['hooks','scripts that trim tool output, e.g. only ERROR lines']],
+  predict:{ q:'You switch to an unrelated bug. /compact or /clear?', a:['/compact', '/clear', 'Neither: keep the context'], ok:1 },
+  why:'`/clear`. It starts a fresh session and costs nothing. `/compact` has to read the whole conversation to summarise it, so it is itself a large request: use it when you want to keep working on the same thing. Use `/rename` first if you want to `/resume` the old session later.',
+  build(G){
+    const ctxJar = makeJar(.075, .42, COL.input); at(ctxJar, .12, 0, -.44); G.add(ctxJar);
+    const lbl = jarLabel('Context', COL.input); at(lbl, .14, .03, -.24); G.add(lbl);
+    let ctx = 150000; const MAXC = 200000; ctxJar.userData.set(ctx, MAXC); lbl.userData.set(ctx);
+    const setCtx = (v, extra) => { ctx = Math.max(0, v); ctxJar.userData.set(ctx, MAXC); lbl.userData.set(ctx, extra || ''); stackTo(ctx); };
+    // the stack under the press
+    const press = new THREE.Group(); at(press, .45, 0, -.35); G.add(press);
+    press.add(at(box(.3, .02, .22, PAPER, .005), 0, .01, 0));
+    for (const x of [-.13, .13]) press.add(at(M(cylg(.012, .012, .5), PAPER), x, .26, 0));
+    press.add(at(box(.32, .04, .06, PAPER, .006), 0, .5, 0));
+    const screw = at(M(cylg(.01, .01, .2), hatchMat('#d7d2c8')), 0, .42, 0); press.add(screw);
+    const handle = at(M(cylg(.006, .006, .16), hatchMat('#d7d2c8')), 0, .52, 0); handle.rotation.z = Math.PI/2; press.add(handle);
+    const plate = at(box(.24, .02, .18, PAPER, .004), 0, .4, 0); press.add(plate);
+    const stack = new THREE.Group(); press.add(stack); const sheets = [];
+    for (let i = 0; i < 26; i++){ const s = M(new THREE.BoxGeometry(.2, .009, .15), i % 5 === 0 ? hatchMat('#f6e3d8') : PAPER); s.rotation.y = Math.sin(i*1.9)*.05; stack.add(s); sheets.push(s); }
+    let curH = 0; function stackTo(v){ const H = Math.max(.004, v/MAXC*.36), from = curH; curH = H;
+      anim(.7, k => { const hh = from + (H - from)*k; sheets.forEach((s, i) => { s.position.y = .02 + (i + .5)*hh/sheets.length; s.scale.y = Math.max(.05, hh/sheets.length/.009); s.visible = hh > .006 || i === 0; });
+        const py = .02 + hh + .012; plate.position.y = Math.max(py, plate.position.y > py ? py : plate.position.y); }); }
+    stackTo(ctx); plate.position.y = .44;
+    tappable(press, '/compact', async () => { caption('/compact reads the whole stack once, then summarises it.'); sfx('tap');
+      ops.userData.work(1.8, 'gt', 'happy'); await anim(.9, k => { plate.position.y = .44 - k*.38; handle.rotation.y = k*Math.PI*2; screw.position.y = .42 - k*.1; });
+      setCtx(Math.min(ctx, 22000), 'after /compact'); sfx('thud');
+      await wait(.9); anim(.8, k => { plate.position.y = .06 + k*.38; screw.position.y = .32 + k*.1; }); });
+    // the bin for /clear
+    const bin = new THREE.Group(); const binG = new THREE.CylinderGeometry(.075, .06, .16, 28, 1, true); bin.add(at(M(binG, hatchMat('#e9e4da', { side:THREE.DoubleSide })), 0, .08, 0)); bin.add(at(ring(.075), 0, .16, 0));
+    const bl = canvasTex(300, 100, (g, w, h) => { g.fillStyle = INK; g.font = `700 54px ${MONO}`; g.textAlign = 'center'; g.fillText('/clear', w/2, 70); });
+    const blm = new THREE.Mesh(new THREE.PlaneGeometry(.12, .04), new THREE.MeshBasicMaterial({ map:bl, transparent:true })); at(blm, 0, .09, .074); bin.add(blm);
+    at(bin, .84, 0, -.35); G.add(bin);
+    const ops = makeAgent({ hat:'hardhat', tool:'wrench' }); at(ops, .5, 0, -.02); G.add(ops);
+    tappable(ops, 'Systems agent', () => { ops.userData.hop(.04); caption('Tap the press, the bin, CLAUDE.md or the funnel.'); });
+    tappable(bin, '/clear', () => { ops.userData.hop(.05); ops.userData.setExpr('happy'); caption('/clear empties the stack. New task, fresh start, nothing to pay.'); sfx('thud'); setCtx(0, 'after /clear'); });
+    // CLAUDE.md: thick book that slims down into skills
+    const thick = at(box(.17, .07, .21, hatchMat('#efe6d6'), .008), .25, .035, .2); G.add(thick);
+    const tlab = canvasTex(400, 120, (g, w, h) => { g.fillStyle = CLAY; g.fillRect(0,0,w,h); g.fillStyle = '#fff'; g.font = `700 52px ${MONO}`; g.fillText('CLAUDE.md', 24, 78); });
+    const tl = new THREE.Mesh(new THREE.PlaneGeometry(.16, .05), new THREE.MeshBasicMaterial({ map:tlab })); tl.rotation.x = -Math.PI/2; at(tl, 0, .0355, -.07); thick.add(tl);
+    const skills = []; ['deploy', 'review', 'migrate'].forEach((n, i) => { const sk = labelCard(.1, .065, (g, w, h) => { g.fillStyle = '#eaf2ff'; g.fillRect(0,0,w,h); g.fillStyle = COL.write; g.fillRect(0,0,w,18); g.fillStyle = INK; g.font = `600 ${h*.22}px ${MONO}`; g.fillText('SKILL', 16, h*.48); g.font = `700 ${h*.26}px ${SERIF}`; g.fillText(n, 16, h*.82); });
+      at(sk, .42 + i*.12, .004, .3); sk.rotation.y = (i - 1)*.2; sk.visible = false; G.add(sk); skills.push(sk); });
+    let slim = false;
+    tappable(thick, 'CLAUDE.md', async () => { if (slim) return; slim = true; sfx('flap'); caption('CLAUDE.md slims to essentials; workflows move into skills.');
+      await anim(.6, k => { thick.scale.y = 1 - .7*k; thick.position.y = .035*(1 - .7*k); });
+      skills.forEach((s, i) => setTimeout(() => { s.visible = true; const y0 = .004; anim(.4, k => s.position.y = y0 + Math.sin(k*Math.PI)*.08); sfx('tap'); }, i*180));
+      setCtx(ctx - 9000, 'CLAUDE.md -9k'); });
+    // the hook: a funnel that filters a long log down to the errors
+    const funnel = new THREE.Group(); funnel.add(at(M(new THREE.CylinderGeometry(.08, .012, .12, 28, 1, true), hatchMat('#e9e4da', { side:THREE.DoubleSide })), 0, .14, 0));
+    funnel.add(at(M(cylg(.012, .012, .08), hatchMat('#e9e4da')), 0, .04, 0)); funnel.add(at(ring(.08), 0, .2, 0));
+    const log = new THREE.Group(); for (let i = 0; i < 6; i++){ const s = M(new THREE.BoxGeometry(.12, .004, .16), PAPER); s.position.set(0, .21 + i*.006, 0); s.rotation.y = i*.08; log.add(s); } funnel.add(log);
+    const err = labelCard(.11, .05, (g, w, h) => { g.fillStyle = '#fff1ee'; g.fillRect(0,0,w,h); g.fillStyle = '#c0392b'; g.font = `700 ${h*.36}px ${MONO}`; g.fillText('2 ERRORS', 14, h*.66); }); at(err, .1, .004, .07); err.visible = false; funnel.add(err);
+    at(funnel, .7, 0, .17); G.add(funnel); let filtered = false;
+    tappable(funnel, 'Hook filter', async () => { if (filtered) return; filtered = true; sfx('fill'); caption('A hook keeps only ERROR lines: tens of thousands of tokens become hundreds.');
+      await anim(.8, k => log.children.forEach((s, i) => { s.position.y = .21 + i*.006 - k*.2; s.scale.set(1 - k*.9, 1, 1 - k*.9); }));
+      log.visible = false; err.visible = true; anim(.4, k => err.position.y = .004 + Math.sin(k*Math.PI)*.06); setCtx(ctx - 12000, 'hook -12k'); });
+    return { shots:[ { cap:'One stack, four squeezes.', cam:[.55, .95, 1.1], tgt:[.5, .08, -.08] },
+      { cap:'Slim CLAUDE.md, move workflows to skills.', focus:thick, act:() => thick.userData.tap.onTap() },
+      { cap:'Filter noisy output with a hook.', focus:funnel, act:() => funnel.userData.tap.onTap() },
+      { cap:'/compact: keep going, smaller.', focus:press, act:() => press.userData.tap.onTap(), hold:3.2 },
+      { cap:'/clear: unrelated task, fresh start.', focus:bin, act:() => bin.userData.tap.onTap() } ] };
+  } });
+
+/* Lesson 5: the crew (agent teams) */
+LESSONS.push({ n:5, title:'The crew', fig:'Seven agents, one team meter.', tapHint:'Tap an agent to spawn it. Tap again to shut it down.',
+  intro:['An agent team runs several Claude Code sessions at once, each a teammate with **its own context window**. Spend grows with every teammate you spawn.',
+         'Spawn only the crew the job needs, give teammates Sonnet, and shut each one down when its part is done: an idle teammate still costs.'],
+  eq:'team tokens ≈ teammates × their own context',
+  eqNotes:['Each teammate loads CLAUDE.md, MCP servers and skills on its own.', 'With teammates in plan mode, a team can use about 7× the tokens of one session.'],
+  keys:[['agent team','several Claude Code instances on one job'], ['teammate','one member, with its own context window'], ['spawn prompt','what a teammate starts with: keep it short'], ['shut down','stop a finished teammate so it stops spending']],
+  predict:{ q:'Two teammates finished their part ten minutes ago. What now?', a:['Leave them running, just in case', 'Shut them down', 'Give them a bigger model'], ok:1 },
+  why:'Shut them down. Each active teammate keeps consuming tokens until it exits or the session ends. Keep teams small and tasks self-contained. Agent teams are experimental and off by default: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` turns them on.',
+  build(G){
+    const step = at(box(.82, .05, .26, PAPER, .01), .5, .025, -.38); G.add(step);
+    const CREW = [
+      { name:'Strategy', ag:{ hat:'captain' }, chip:'PLAN', col:COL.output, x:.27, z:-.38, y:.05 },
+      { name:'Marketing', ag:{ tool:'launch' }, chip:'LAUNCH', col:COL.input, x:.5, z:-.38, y:.05 },
+      { name:'Support', ag:{ hat:'headphones' }, chip:'TICKETS', col:COL.read, x:.73, z:-.38, y:.05 },
+      { name:'SEO', ag:{ hat:'deerstalker', tool:'magnifier' }, chip:'CRAWL', col:COL.write, x:.14, z:.06, y:0 },
+      { name:'Content', ag:{ hat:'chef', tool:'pan' }, chip:'DRAFT', col:COL.gold, x:.38, z:.06, y:0 },
+      { name:'Engineering', ag:{ tool:'mug' }, chip:'BUILD', col:COL.write, x:.62, z:.06, y:0 },
+      { name:'Systems', ag:{ hat:'hardhat', tool:'wrench' }, chip:'DEPLOY', col:COL.read, x:.86, z:.06, y:0 } ];
+    const jar = makeJar(.055, .26, COL.output); at(jar, .86, 0, .38); G.add(jar);
+    const lbl = jarLabel('Team tokens', COL.output); at(lbl, .64, .045, .44); lbl.scale.set(1.15, 1, 1.05); G.add(lbl);
+    let total = 0, shown = -1; const MAXT = 400000;
+    CREW.forEach(c => {
+      const a = makeAgent({ ...c.ag, expr:'closed' }); at(a, c.x, c.y, c.z); a.userData.sleep(true); G.add(a);
+      const chip = makeChip(c.chip, c.name.toLowerCase(), c.col, .05); at(chip, c.x, c.y, c.z + .1); G.add(chip);
+      c.on = false; c.a = a;
+      const toggle = async () => { c.on = !c.on;
+        if (c.on){ a.userData.sleep(false); chip.userData.setActive(true); await a.userData.hop(.06); a.userData.work(1.6, 'gt', 'open'); total += 25000; sfx('fill');
+          caption(`${c.name} spawned: loads CLAUDE.md, MCP and skills (+25k).`); }
+        else { chip.userData.setActive(false); a.userData.sleep(true); sfx('thud'); caption(`${c.name} shut down. It stops spending.`); } };
+      tappable(a, c.name, toggle); tappable(chip, c.name + ' chip', toggle);
+    });
+    onFrame(dt => { const active = CREW.filter(c => c.on).length; total += active*1500*dt;
+      if (Math.abs(total - shown) > 400 || (active === 0 && shown !== total)){ shown = total; jar.userData.setNow(total, MAXT); lbl.userData.set(total, `${active} active · idle ones still spend`); } });
+    return { shots:[ { cap:'Seven agents, one team meter.', cam:[.5, .85, 1.2], tgt:[.5, .06, -.1] },
+      { cap:'Spawn the SEO detective.', focus:CREW[3].a, act:() => CREW[3].a.userData.tap.onTap() },
+      { cap:'Spawn the content chef.', focus:CREW[4].a, act:() => CREW[4].a.userData.tap.onTap() },
+      { cap:'Spawn the engineer.', focus:CREW[5].a, act:() => CREW[5].a.userData.tap.onTap() },
+      { cap:'Watch the meter: idle teammates still spend.', cam:[1.1, .6, .9], tgt:[.75, .08, .3], hold:3 },
+      { cap:'Done? Shut them down.', cam:[.5, .85, 1.2], tgt:[.5, .06, -.1], act:() => [3, 4, 5].forEach(i => CREW[i].on && CREW[i].a.userData.tap.onTap()) } ] };
+  } });
+
+/* ---------- current lesson / scene ---------- */
+let cur = -1, popup = null, ST = { pick:null, flap:false }, shots = [], shotI = 0, busy = false, opened = false;
+const popupRoot = new THREE.Group(); book.add(popupRoot);
+function buildLesson(i){
+  if (popup){ popupRoot.remove(popup); tappables.length = 0; }
+  sceneUpd = [];
+  popup = new THREE.Group(); popup.position.set(0, BASE_Y, -PH/2 + .02); popup.position.z = 0; popupRoot.add(popup);
+  const L = LESSONS[i]; ST = { pick:null, flap:false };
+  const res = L.build(popup); shadowy(popup);
+  shots = res.shots; shotI = 0; drawLeft(L, ST); drawRight(L); placeFlap(); renderDots();
+  popup.scale.y = .001; return anim(.8, k => popup.scale.y = Math.max(.001, k), null, easeBack);
+}
+async function goTo(i, instant){
+  if (busy || i === cur || i < 0 || i >= LESSONS.length) return; busy = true; stopTour();
+  if (!opened){ await openBook(); }
+  const dir = i > cur ? 1 : -1;
+  if (cur >= 0 && !instant){
+    await anim(.35, k => popup.scale.y = Math.max(.001, 1 - k));
+    // page turn: forward = right page lifts and lands on the left; backward = the reverse
+    const oldRight = snap(rightTex), oldLeft = snap(leftTex);
+    const L = LESSONS[i];
+    cur = i; drawLeft(L, { pick:null, flap:false }); const newLeft = snap(leftTex); drawRight(L); const newRight = snap(rightTex);
+    if (dir > 0){ turnFront.material.map = oldRight; turnBack.material.map = newLeft; leftTex.redraw(() => {}); leftTex.userData.cv.getContext('2d').drawImage(oldLeft.image, 0, 0); leftTex.needsUpdate = true; }
+    else { turnFront.material.map = newRight; turnBack.material.map = oldLeft; rightTex.userData.cv.getContext('2d').drawImage(oldRight.image, 0, 0); rightTex.needsUpdate = true; }
+    turnFront.material.needsUpdate = turnBack.material.needsUpdate = true; turn.visible = true; flap.visible = false; sfx('page');
+    const a0 = dir > 0 ? 0 : Math.PI, a1 = dir > 0 ? Math.PI : 0;
+    await anim(.9, k => { turn.rotation.z = a0 + (a1 - a0)*k; bend(Math.sin(k*Math.PI)*dir); });
+    turn.visible = false; flap.visible = true;
+    cur = -1;
+  }
+  cur = i; await buildLesson(i); captionLesson(); busy = false;
+  if (!instant) flyTo(...frameFor('open'), 1.1);
+}
+function bend(a){ for (const m of [turnFront, turnBack]){ const p = m.geometry.attributes.position; for (let j = 0; j < p.count; j++){ const x = p.getX(j) + PW/2; p.setZ(j, (m === turnFront ? 1 : -1)*-Math.sin(x/PW*Math.PI)*.12*a); } p.needsUpdate = true; } }
+async function openBook(){
+  opened = true; document.getElementById('hint').classList.add('gone'); document.getElementById('intro').classList.add('gone'); sfx('page');
+  flyTo([0, 2.15, 2.1], [0, 0, .05], 1.6);
+  await anim(1.4, k => { leftHalf.rotation.z = -Math.PI*(1 - k); leftHalf.position.y = BASE_Y + Math.sin(k*Math.PI)*.04; });
+  leftHalf.position.y = BASE_Y;
+}
+function closeToCover(){ leftHalf.rotation.z = -Math.PI; }
+
+/* ---------- camera ---------- */
+function frameFor(kind){ const portrait = innerWidth < innerHeight*.9;
+  if (kind === 'closed') return portrait ? [[.5, 2.4, 2.7], [.5, 0, .05]] : [[.5, 2.05, 2.25], [.5, 0, .05]];
+  return portrait ? [[0, 4.3, 3.3], [0, 0, .12]] : [[0, 2.15, 2.1], [0, 0, .05]]; }
+function flyTo(pos, tgt, dur = 1.2){ const p0 = camera.position.clone(), t0 = controls.target.clone(), p1 = new THREE.Vector3(...pos), t1 = new THREE.Vector3(...tgt);
+  // positions are in book space: the book sits at the origin
+  return anim(dur, k => { camera.position.lerpVectors(p0, p1, k); controls.target.lerpVectors(t0, t1, k); }); }
+function focusOn(obj){ const p = new THREE.Vector3(); obj.getWorldPosition(p); return flyTo([p.x + .1, p.y + .42, p.z + .52], [p.x, p.y + .05, p.z], 1.1); }
+
+/* ---------- tour (play) ---------- */
+let touring = false, tourTimer = null;
+async function tourStep(){
+  if (!touring) return;
+  if (shotI >= shots.length){ if (cur < LESSONS.length - 1){ await goTo(cur + 1); shotI = 1; tourTimer = setTimeout(tourStep, 1600); } else stopTour(); return; }
+  const s = shots[shotI]; renderDots(); caption(s.cap);
+  if (s.focus) await focusOn(s.focus); else await flyTo(s.cam, s.tgt, 1.2);
+  if (s.act) s.act();
+  shotI++; tourTimer = setTimeout(tourStep, (s.hold || 2.4)*1000);
+}
+function startTour(){ touring = true; setPlay(); if (!opened || cur < 0){ goTo(0).then(() => { shotI = 0; tourStep(); }); } else tourStep(); }
+function stopTour(){ touring = false; clearTimeout(tourTimer); setPlay(); }
+function setPlay(){ document.getElementById('playIcon').innerHTML = touring ? '<path d="M8 5h3v14H8zM13 5h3v14h-3z" fill="currentColor" stroke="none"/>' : '<path d="M8 5l11 7-11 7z" fill="currentColor" stroke="none"/>'; document.getElementById('bPlay').setAttribute('aria-pressed', touring); }
+
+/* ---------- toolbar ---------- */
+const capT = document.getElementById('capT');
+let capTimer = null;
+function caption(t){ capT.textContent = t; clearTimeout(capTimer); if (!touring) capTimer = setTimeout(captionLesson, 5000); }
+function captionLesson(){ capT.textContent = cur >= 0 ? `${LESSONS[cur].n}  ${LESSONS[cur].title}` : 'Claude Code Chips'; }
+function renderDots(){ document.getElementById('dots').innerHTML = shots.map((_, i) => `<i class="${i === Math.max(0, shotI - (touring ? 1 : 0)) && touring ? 'on' : ''}"></i>`).join('') || ''; }
+const menu = document.getElementById('menu');
+function renderMenu(){ menu.innerHTML = `<button data-i="-1" class="${cur < 0 ? 'cur' : ''}"><small>COVER</small>Claude Code Chips</button>` + LESSONS.map((L, i) => `<button data-i="${i}" class="${i === cur ? 'cur' : ''}"><small>LESSON ${L.n}</small>${L.title}</button>`).join('')
+  + `<div class="foot">An unofficial guide. Prices: Claude API list prices for the 5.5 models; check current pricing before you budget.</div>`;
+  menu.querySelectorAll('button').forEach(b => b.onclick = e => { e.stopPropagation(); menu.classList.remove('open'); const i = +b.dataset.i; if (i < 0){ if (opened && !busy) shut(); } else goTo(i); }); }
+async function shut(){ busy = true; stopTour(); await anim(.3, k => popup && (popup.scale.y = Math.max(.001, 1 - k))); if (popup){ popupRoot.remove(popup); popup = null; tappables.length = 0; sceneUpd = []; }
+  flyTo(...frameFor('closed'), 1.4); sfx('page'); await anim(1.2, k => leftHalf.rotation.z = -Math.PI*k); opened = false; cur = -1; captionLesson(); busy = false; document.getElementById('hint').classList.remove('gone'); }
+document.getElementById('bMenu').onclick = e => { e.stopPropagation(); ac(); renderMenu(); menu.classList.toggle('open'); };
+document.addEventListener('click', () => menu.classList.remove('open'));
+document.getElementById('bPrev').onclick = () => { ac(); if (cur <= 0){ if (opened) shut(); } else goTo(cur - 1); };
+document.getElementById('bNext').onclick = () => { ac(); goTo(cur + 1); };
+document.getElementById('bPlay').onclick = () => { ac(); touring ? stopTour() : startTour(); };
+document.getElementById('bSound').onclick = e => { soundOn = !soundOn; e.currentTarget.setAttribute('aria-pressed', soundOn); document.getElementById('sndWave').style.opacity = soundOn ? 1 : 0; };
+document.getElementById('bView').onclick = () => { stopTour(); flyTo(...frameFor(opened ? 'open' : 'closed'), 1); };
+let night = false;
+function setNight(v){ night = v; document.documentElement.dataset.theme = v ? 'dark' : 'light';
+  hemi.intensity = v ? .35 : .9; sun.intensity = v ? .55 : 2.1; sun.color.set(v ? 0xb9c8ff : 0xfff1dc); fill.intensity = v ? .15 : .35; renderer.toneMappingExposure = v ? .95 : 1.05;
+  lamp.intensity = v ? 3.2 : 0; scene.background = new THREE.Color(v ? '#141210' : '#cfc6b6'); scene.fog = new THREE.Fog(v ? '#141210' : '#cfc6b6', 6, 16); }
+document.getElementById('bTheme').onclick = () => setNight(!night);
+const lamp = new THREE.PointLight(0xffd59a, 0, 6, 1.6); lamp.position.set(-1.6, 1.6, -.6); lamp.castShadow = true; scene.add(lamp);
+addEventListener('keydown', e => { if (e.key === 'ArrowRight') goTo(cur + 1); if (e.key === 'ArrowLeft') document.getElementById('bPrev').click(); if (e.key === ' '){ e.preventDefault(); document.getElementById('bPlay').click(); } });
+
+/* ---------- pointer: tap objects, predict, flap, lens ---------- */
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+const lens = { el:document.getElementById('lens'), on:false }; let lensImg = null, cardTimer = null, cardBlock = null;
+const cardEl = document.getElementById('card');
+function pick(e){ ptr.set(e.clientX/innerWidth*2 - 1, -(e.clientY/innerHeight)*2 + 1); ray.setFromCamera(ptr, camera); }
+function hitTappable(){ const hits = ray.intersectObjects(tappables, true); for (const h of hits){ let o = h.object; while (o && !o.userData.tap) o = o.parent; if (o) return o; } return null; }
+function hitLeft(){ if (!opened || busy) return null; const hits = ray.intersectObjects([leftPage, flap], false); if (!hits.length) return null; const h = hits[0];
+  if (h.object === flap) return { flap:true };
+  const W = leftTex.userData.cv.width, H = leftTex.userData.cv.height; return { x:h.uv.x*W, y:(1 - h.uv.y)*H }; }
+const inR = (p, r) => p.x >= r[0] && p.x <= r[0] + r[2] && p.y >= r[1] && p.y <= r[1] + r[3];
+let downAt = null;
+canvas.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; ac(); });
+canvas.addEventListener('pointerup', e => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 6) return; downAt = null; pick(e);
+  if (!opened){ const h = ray.intersectObject(book, true); if (h.length) goTo(0); return; }
+  if (busy) return;
+  const t = hitTappable(); if (t){ stopTour(); t.userData.tap.onTap(); return; }
+  const L = hitLeft(); if (!L) return;
+  if (L.flap || (LP.flapRect && inR(L, LP.flapRect))){ toggleFlap(); return; }
+  const o = LP.options.find(o => inR(L, o.r)); if (o){ ST.pick = o.i; sfx('tap'); drawLeft(LESSONS[cur], ST); caption('Prediction made. Lift the flap to check.'); }
+});
+canvas.addEventListener('pointermove', e => {
+  pick(e); const t = opened && !busy ? hitTappable() : null;
+  if (t !== hovered){ if (hovered) liftHover(hovered, false); hovered = t; if (t) liftHover(t, true); }
+  const L = !t && opened ? hitLeft() : null;
+  const overOpt = L && !L.flap && (LP.options.some(o => inR(L, o.r)) || (LP.flapRect && inR(L, LP.flapRect)));
+  canvas.style.cursor = t || overOpt || (L && L.flap) || (!opened && ray.intersectObject(book, true).length) ? 'pointer' : 'grab';
+  // the magnifying lens over the left page text
+  if (L && !L.flap && innerWidth > 640){
+    if (!lensImg){ lensImg = leftTex.userData.cv.toDataURL('image/jpeg', .85); lens.el.style.backgroundImage = `url(${lensImg})`; }
+    const Z = 1.15, W = leftTex.userData.cv.width, size = lens.el.offsetWidth;
+    lens.el.style.backgroundSize = `${W*Z/1.4*size/168*1.4/1.4}px auto`;
+    const bgW = W*Z*size/700; lens.el.style.backgroundSize = `${bgW}px auto`; const sc = bgW/W;
+    lens.el.style.backgroundPosition = `${-(L.x*sc - size/2)}px ${-(L.y*sc - size/2)}px`;
+    lens.el.style.left = e.clientX + 'px'; lens.el.style.top = e.clientY + 'px'; lens.el.classList.add('on'); lens.on = true;
+    const blk = LP.blocks.find(b => inR(L, b.r) && !(b.flap && !flapOpen));
+    if (blk !== cardBlock){ cardBlock = blk; cardEl.classList.remove('on'); clearTimeout(cardTimer); if (blk) cardTimer = setTimeout(() => showCard(blk, e), 450); }
+    else if (blk) placeCard(e);
+  } else { lens.el.classList.remove('on'); lens.on = false; cardBlock = null; clearTimeout(cardTimer); cardEl.classList.remove('on'); }
+});
+canvas.addEventListener('pointerleave', () => { lens.el.classList.remove('on'); cardEl.classList.remove('on'); cardBlock = null; });
+const md = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+function showCard(b, e){ cardEl.innerHTML = `<div class="k">${b.k}</div>${b.h ? `<div class="h">${md(b.h)}</div>` : ''}${b.body.map(p => `<p>${md(p)}</p>`).join('')}`; placeCard(e); cardEl.classList.add('on'); }
+function placeCard(e){ const r = cardEl.getBoundingClientRect(); let x = e.clientX - r.width - 100, y = e.clientY - r.height/2; if (x < 12) x = e.clientX + 100; y = Math.max(12, Math.min(innerHeight - r.height - 90, y)); cardEl.style.left = x + 'px'; cardEl.style.top = y + 'px'; }
+function liftHover(o, on){ const y0 = o.userData.y0 ?? (o.userData.y0 = o.position.y); if (o.userData.noLift) return; anim(.18, k => o.position.y = on ? y0 + .012*k : y0 + .012*(1 - k)); }
+
+/* ---------- resize + loop ---------- */
+function resize(){ const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w/h; camera.fov = w < h ? 42 : 32; camera.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+book.position.set(0, 0, 0);
+let lastNow = 0;
+function loop(now){ const dt = Math.min(.05, lastNow ? (now - lastNow)/1000 : .016); lastNow = now; tickAnims(now); for (const u of sceneUpd) u(dt, now/1000); controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop); }
+
+/* ---------- start ---------- */
+closeToCover();
+const [cp, ct] = frameFor('closed'); camera.position.set(...cp); controls.target.set(...ct);
+setNight(matchMedia('(prefers-color-scheme: dark)').matches && !qs.has('day'));
+(async () => {
+  try { await Promise.race([Promise.all([document.fonts.load(`700 40px Newsreader`), document.fonts.load(`400 40px Newsreader`), document.fonts.load(`italic 600 40px Newsreader`), document.fonts.load(`700 20px "JetBrains Mono"`)]), wait(2.5)]); } catch (e) {}
+  coverTex.redraw(); renderMenu(); captionLesson();
+  requestAnimationFrame(loop); setTimeout(() => document.getElementById('load').classList.add('gone'), 250);
+  // screenshot states: ?lesson=2&tap=all&flap=1&pick=1&view=right
+  if (qs.has('lesson')){ const i = +qs.get('lesson') - 1; leftHalf.rotation.z = 0; opened = true; document.getElementById('hint').classList.add('gone'); document.getElementById('intro').classList.add('gone');
+    cur = i; await buildLesson(i); captionLesson(); const [p, t] = frameFor('open'); camera.position.set(...p); controls.target.set(...t);
+    if (qs.has('pick')){ ST.pick = +qs.get('pick'); drawLeft(LESSONS[cur], ST); }
+    if (qs.get('flap') === '1') toggleFlap(true);
+    if (qs.get('view') === 'right'){ camera.position.set(...shots[0].cam); controls.target.set(...shots[0].tgt); }
+    if (qs.get('tap') === 'all') for (const s of shots) if (s.act){ s.act(); await wait(.25); }
+  }
+  window.__ready = true;
+})();
+window.__api = { goTo, toggleFlap, startTour, stopTour, get cur(){ return cur; }, camera, controls, LESSONS,
+  names(){ return tappables.map(t => t.userData.tap.name); },
+  screenOf(name){ const o = tappables.find(t => t.userData.tap.name === name); if (!o) return null; const v = new THREE.Vector3(); o.getWorldPosition(v); v.y += .03; v.project(camera); return [(v.x + 1)/2*innerWidth, (1 - v.y)/2*innerHeight]; },
+  leftAt(u, v){ const p = new THREE.Vector3(-PW + u*PW, BASE_Y, -PH/2 + v*PH).project(camera); return [(p.x + 1)/2*innerWidth, (1 - p.y)/2*innerHeight]; } };
+</script>
+</body>
+</html>
