@@ -12,3 +12,7 @@ Prices and cost tips come from the Claude API pricing page and the Claude Code d
 
 ## Edit
 The source is `src/book.html` (the cover mascot is `sprites/base.png`). Rebuild with `python3 build.py`, which writes `index.html`.
+
+## Volume 2: Claude Code Chip Systems
+
+`/systems/` is the second book: loop, fan-out, router, verifier, tournament and swarm, each built from the same pencil-style agents and chips. Press ▶ to run the system on the open page; ⏸ finishes it. `/systems/?autoplay` plays all six in a row.
