@@ -732,8 +732,8 @@ function buildLesson(i){
   shots = res.shots; shotI = 0; drawLeft(L, ST); drawRight(L); placeFlap(); renderDots();
   popup.scale.y = .001; return anim(.8, k => popup.scale.y = Math.max(.001, k), null, easeBack);
 }
-async function goTo(i, instant){
-  if (busy || i === cur || i < 0 || i >= LESSONS.length) return; busy = true; stopTour();
+async function goTo(i, instant, fromTour){
+  if (busy || i === cur || i < 0 || i >= LESSONS.length) return; busy = true; if (!fromTour) stopTour();
   if (!opened){ await openBook(); }
   const dir = i > cur ? 1 : -1;
   if (cur >= 0 && !instant){
@@ -775,13 +775,13 @@ function focusOn(obj){ const p = new THREE.Vector3(); obj.getWorldPosition(p); r
 let touring = false, tourTimer = null;
 async function tourStep(){
   if (!touring) return;
-  if (shotI >= shots.length){ if (cur < LESSONS.length - 1){ await goTo(cur + 1); shotI = 1; tourTimer = setTimeout(tourStep, 1600); } else stopTour(); return; }
+  if (shotI >= shots.length){ if (cur < LESSONS.length - 1){ await goTo(cur + 1, false, true); shotI = 1; tourTimer = setTimeout(tourStep, 1600); } else stopTour(); return; }
   const s = shots[shotI]; renderDots(); caption(s.cap);
   if (s.focus) await focusOn(s.focus); else await flyTo(s.cam, s.tgt, 1.2);
   if (s.act) s.act();
   shotI++; tourTimer = setTimeout(tourStep, (s.hold || 2.4)*1000);
 }
-function startTour(){ touring = true; setPlay(); if (!opened || cur < 0){ goTo(0).then(() => { shotI = 0; tourStep(); }); } else tourStep(); }
+function startTour(){ touring = true; setPlay(); if (!opened || cur < 0){ goTo(0, false, true).then(() => { shotI = 0; tourStep(); }); } else tourStep(); }
 function stopTour(){ touring = false; clearTimeout(tourTimer); setPlay(); }
 function setPlay(){ document.getElementById('playIcon').innerHTML = touring ? '<path d="M8 5h3v14H8zM13 5h3v14h-3z" fill="currentColor" stroke="none"/>' : '<path d="M8 5l11 7-11 7z" fill="currentColor" stroke="none"/>'; document.getElementById('bPlay').setAttribute('aria-pressed', touring); }
 
@@ -882,6 +882,7 @@ setNight(matchMedia('(prefers-color-scheme: dark)').matches && !qs.has('day'));
     if (qs.get('tap') === 'all') for (const s of shots) if (s.act){ s.act(); await wait(.25); }
   }
   window.__ready = true;
+  if (qs.has('autoplay')) setTimeout(() => startTour(), +(qs.get('autoplay') || 2000));
 })();
 window.__api = { goTo, toggleFlap, startTour, stopTour, get cur(){ return cur; }, camera, controls, LESSONS,
   names(){ return tappables.map(t => t.userData.tap.name); },
